@@ -43,6 +43,8 @@ bun dev
 
 브라우저에서 [http://localhost:3000](http://localhost:3000)을 열어 결과를 확인하세요.
 
+> **참고:** 현 개발 환경에서는 Turbopack이 포트 바인딩을 시도하다가 종료되기 때문에 `npm run dev`와 `npm run build` 모두 `--webpack` 플래그를 강제로 사용하도록 설정했습니다.
+
 `app/page.tsx` 파일을 수정하여 페이지를 편집할 수 있습니다. 파일을 편집하면 페이지가 자동으로 업데이트됩니다.
 
 ## 기술 스택
@@ -53,6 +55,25 @@ bun dev
 - **Styling**: Tailwind CSS 4
 - **Code Quality**: ESLint, Prettier
 - **Git Hooks**: Husky, lint-staged, Commitlint
+
+## 폴더 구조
+
+```
+app/
+  (app)/
+    layout.tsx          # 공용 내비게이션/테마 헤더
+    page.tsx            # / -> /dashboard 리디렉션
+    dashboard/          # 대시보드 RSC 페이지
+    learning-resources/ # 자료실 페이지
+  (auth)/
+    layout.tsx          # 로그인/회원가입 전용 레이아웃
+    login/
+    register/
+src/
+  components/           # 공용 UI, 레이아웃, providers
+  features/             # 도메인 단위 UI/데이터 (dashboard, auth 등)
+  lib/                  # fonts, utils 등 헬퍼
+```
 
 ## 사용 가능한 스크립트
 

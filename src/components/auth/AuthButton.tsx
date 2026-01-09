@@ -19,7 +19,7 @@ export const AuthButton = memo(function AuthButton({
     <button
       type="submit"
       disabled={isLoading || props.disabled}
-      className="w-full rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-70"
+      className="w-full rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-primary dark:hover:bg-primary/90"
       {...props}
     >
       {isLoading ? loadingLabel : label}

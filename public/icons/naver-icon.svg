@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="Naver logo">
+  <rect width="24" height="24" rx="4" fill="#03C75A" />
+  <path
+    fill="#fff"
+    d="M16.438 5.5h5.562v13h-5.562L8.545 9.856V18.5H3V5.5h5.545l7.893 8.736V5.5Z"
+  />
+</svg>

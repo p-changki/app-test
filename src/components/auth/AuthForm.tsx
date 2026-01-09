@@ -26,11 +26,13 @@ export const AuthForm = memo(function AuthForm({
   return (
     <div className="space-y-6">
       <div className="space-y-1 text-center">
-        <p className="text-xs font-medium uppercase tracking-[0.3em] text-slate-500">
+        <p className="text-xs font-medium uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">
           {subtitle}
         </p>
-        <h1 className="text-2xl font-semibold text-slate-900">{title}</h1>
-        <p className="text-sm text-slate-500">{footer}</p>
+        <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">
+          {title}
+        </h1>
+        <p className="text-sm text-slate-500 dark:text-slate-300">{footer}</p>
       </div>
       <form className="space-y-5" onSubmit={onSubmit}>
         {children}
@@ -52,24 +54,28 @@ export const AuthField = memo(function AuthField({
 
   return (
     <label className="block space-y-2">
-      <span className="text-sm font-medium text-slate-700">{label}</span>
+      <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+        {label}
+      </span>
       <div className="relative">
         <input
           {...inputProps}
           type={inputType}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200 dark:border-slate-600 dark:bg-surface-dark dark:text-white dark:focus:border-primary dark:focus:ring-primary/30"
         />
         {inputProps.type === "password" ? (
           <button
             type="button"
             onClick={() => setSecureVisible((prev) => !prev)}
-            className="absolute inset-y-0 right-3 text-xs font-semibold text-slate-500 underline"
+            className="absolute inset-y-0 right-3 text-xs font-semibold text-slate-500 underline dark:text-slate-300"
           >
             {isSecureVisible ? "숨기기" : "보기"}
           </button>
         ) : null}
       </div>
-      {error ? <p className="text-sm text-red-500">{error}</p> : null}
+      {error ? (
+        <p className="text-sm text-red-500 dark:text-red-300">{error}</p>
+      ) : null}
     </label>
   );
 });
