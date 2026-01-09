@@ -1,3 +1,5 @@
+import type { ClassEntity } from "@/types/entities";
+
 export type Breadcrumb = {
   label: string;
   href?: string;
@@ -70,3 +72,13 @@ export type UpcomingSession = {
   description: string;
   accent?: "primary" | "default" | "success";
 };
+
+export type Assessment = {
+  title: string;
+  date: string;
+  type: string;
+};
+
+export type WatchStudent = NonNullable<ClassEntity["watchStudents"]>[number];
+
+export type ClassRecord = ClassEntity;

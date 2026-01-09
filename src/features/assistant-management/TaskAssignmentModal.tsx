@@ -6,31 +6,50 @@ import { useState } from "react";
 import { iconClass } from "@/lib/icon-class";
 import { cn } from "@/lib/utils";
 
+type AssistantRecipient = {
+  id?: string;
+  name: string;
+  phone?: string;
+  role?: string;
+  statusLabel?: string;
+};
+
 type TaskAssignmentModalProps = {
-  assistant: {
-    name: string;
-    phone?: string;
-    role?: string;
-    statusLabel?: string;
-  };
+  assistants: AssistantRecipient[];
   triggerClassName?: string;
   triggerContent?: ReactNode;
+  disabled?: boolean;
 };
 
 export function TaskAssignmentModal({
-  assistant,
+  assistants,
   triggerClassName,
   triggerContent,
+  disabled = false,
 }: TaskAssignmentModalProps) {
   const [open, setOpen] = useState(false);
+  const firstAssistant = assistants[0];
+  const hasMultipleRecipients = assistants.length > 1;
+  const canOpen = assistants.length > 0 && !disabled;
+
+  const recipientLabel = hasMultipleRecipients
+    ? `${assistants.length}명의 조교`
+    : firstAssistant
+      ? `${firstAssistant.name} 조교`
+      : "선택된 조교";
 
   return (
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          if (canOpen) {
+            setOpen(true);
+          }
+        }}
+        disabled={!canOpen}
         className={cn(
-          "flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary/90",
+          "flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70",
           triggerClassName
         )}
       >
@@ -53,7 +72,7 @@ export function TaskAssignmentModal({
                 <div>
                   <p className="text-lg font-bold">새로운 업무 지시</p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {assistant.name} 조교에게 전송됩니다.
+                    {recipientLabel}에게 전송됩니다.
                   </p>
                 </div>
               </div>
@@ -81,23 +100,46 @@ export function TaskAssignmentModal({
                 </p>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
-                <div>
+                <div className="md:col-span-2">
                   <label className="mb-1.5 block text-xs font-semibold text-slate-500 dark:text-slate-400">
                     대상 조교
                   </label>
-                  <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-slate-700 dark:bg-slate-800">
-                    <div className="flex size-6 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-                      {assistant.name.slice(0, 1)}
+                  {hasMultipleRecipients ? (
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
+                      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                        선정된 조교 ({assistants.length}명)
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {assistants.map((assistant) => (
+                          <span
+                            key={assistant.id ?? assistant.name}
+                            className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
+                          >
+                            <span className="size-4 rounded-full bg-primary/20 text-[10px] font-bold uppercase">
+                              {assistant.name.slice(0, 1)}
+                            </span>
+                            {assistant.name}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium">{assistant.name}</p>
-                      {assistant.phone ? (
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                          {assistant.phone}
+                  ) : (
+                    <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-slate-700 dark:bg-slate-800">
+                      <div className="flex size-6 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                        {firstAssistant?.name.slice(0, 1)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">
+                          {firstAssistant?.name}
                         </p>
-                      ) : null}
+                        {firstAssistant?.phone ? (
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                            {firstAssistant.phone}
+                          </p>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
                 <div>
                   <label className="mb-1.5 block text-xs font-semibold text-slate-500 dark:text-slate-400">
@@ -219,17 +261,17 @@ const priorityOptions = [
   {
     label: "높음",
     className:
-      "peer-checked:border-red-200 peer-checked:bg-red-50 peer-checked:text-red-700 dark:peer-checked:border-red-800 dark:peer-checked:bg-red-900/20 dark:peer-checked:text-red-400",
+      "bg-red-50 text-red-600 peer-checked:bg-red-500 peer-checked:text-white dark:bg-red-900/20 dark:text-red-200 peer-checked:dark:bg-red-600",
+    default: true,
   },
   {
     label: "보통",
     className:
-      "peer-checked:border-amber-200 peer-checked:bg-amber-50 peer-checked:text-amber-700 dark:peer-checked:border-amber-800 dark:peer-checked:bg-amber-900/20 dark:peer-checked:text-amber-400",
-    default: true,
+      "bg-slate-50 text-slate-600 peer-checked:bg-slate-600 peer-checked:text-white dark:bg-slate-800 dark:text-slate-300 peer-checked:dark:bg-slate-500",
   },
   {
     label: "낮음",
     className:
-      "peer-checked:border-blue-200 peer-checked:bg-blue-50 peer-checked:text-blue-700 dark:peer-checked:border-blue-800 dark:peer-checked:bg-blue-900/20 dark:peer-checked:text-blue-400",
+      "bg-emerald-50 text-emerald-600 peer-checked:bg-emerald-500 peer-checked:text-white dark:bg-emerald-900/20 dark:text-emerald-200 peer-checked:dark:bg-emerald-600",
   },
-] satisfies Array<{ label: string; className: string; default?: boolean }>;
+];

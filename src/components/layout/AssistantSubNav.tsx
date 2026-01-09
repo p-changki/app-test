@@ -26,7 +26,7 @@ export function AssistantSubNav({
   return (
     <nav
       className={cn(
-        "flex items-center gap-2 rounded-full bg-slate-100 px-2 py-1 text-sm font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400",
+        "flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400 sm:gap-2 sm:text-sm",
         className
       )}
       aria-label="조교 관련 페이지"
@@ -38,7 +38,7 @@ export function AssistantSubNav({
             key={link.href}
             href={link.href}
             className={cn(
-              "rounded-full px-4 py-1.5 transition",
+              "rounded-full px-3 py-1 transition text-[0.75rem] sm:px-4 sm:py-1.5 sm:text-[0.875rem]",
               isActive
                 ? "bg-white text-slate-900 shadow-sm dark:bg-[#1f2735] dark:text-white"
                 : "hover:text-primary"

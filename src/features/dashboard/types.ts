@@ -111,3 +111,62 @@ export type DashboardTaskRow = {
   description: string;
   attachments?: DashboardTaskAttachment[];
 };
+
+export type DashboardSummaryCard = {
+  title: string;
+  value: string;
+  delta?: string;
+  deltaVariant?: "positive" | "negative";
+  icon: string;
+  iconClassName: string;
+};
+
+export type InquiryStatusVariant =
+  | "pending"
+  | "progress"
+  | "done"
+  | "primary"
+  | "neutral"
+  | "success";
+
+export type InquiryRow = {
+  type: "학생" | "학부모";
+  name: string;
+  message: string;
+  date: string;
+  status: string;
+  statusVariant: InquiryStatusVariant;
+};
+
+export type TodayClassSession = {
+  time: string;
+  title: string;
+  room: string;
+};
+
+export type ClinicStudentStatus = "대기" | "완료";
+
+export type ClinicStudent = {
+  name: string;
+  subject: string;
+  time: string;
+  status: ClinicStudentStatus;
+};
+
+export type ClinicScheduleSegment = {
+  leftPercent: number;
+  widthPercent: number;
+  intensity: "low" | "medium" | "high";
+};
+
+export type ClinicScheduleSummary = {
+  timeMarkers: string[];
+  segments: ClinicScheduleSegment[];
+  busiestRangeLabel: string;
+};
+
+export type RetestRequest = {
+  name: string;
+  grade: string;
+  reason: string;
+};

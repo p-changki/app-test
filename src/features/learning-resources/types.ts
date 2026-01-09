@@ -29,6 +29,11 @@ export type ResourceItem = {
   };
   date: string;
   size: string;
+  fileLink?: string;
+  details?: string;
+  videoEmbedUrl?: string;
+  videoDescription?: string;
+  isLive?: boolean;
   previewIcon: {
     name: string;
     title: string;
