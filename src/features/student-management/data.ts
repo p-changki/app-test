@@ -1,3 +1,7 @@
+import { classEntities } from "@/data/classes";
+import { studentEntities } from "@/data/students";
+import type { ClassEntity, StudentEntity } from "@/types/entities";
+
 import type {
   ClassChip,
   FilterSelect,
@@ -5,8 +9,34 @@ import type {
   PaginationItem,
   StudentBreadcrumb,
   StudentRecord,
-  StudentTableSummary,
+  StudentStatusOption,
 } from "./types";
+
+const classLookup = new Map(classEntities.map((klass) => [klass.id, klass]));
+
+const derivedStudentRecords = studentEntities
+  .map((student) => mapStudentEntityToRecord(student))
+  .sort((a, b) => a.name.localeCompare(b.name, "ko"));
+
+const studentsByClassId = derivedStudentRecords.reduce<
+  Record<string, StudentRecord[]>
+>((acc, record) => {
+  const key = record.classId ?? "unassigned";
+  if (!acc[key]) {
+    acc[key] = [];
+  }
+  acc[key]?.push(record);
+  return acc;
+}, {});
+
+const unassignedRecords = studentsByClassId.unassigned ?? [];
+
+const dynamicClassChips: ClassChip[] = classEntities.map((klass) => ({
+  id: klass.id,
+  label: klass.name,
+  count: studentsByClassId[klass.id]?.length ?? 0,
+  color: getClassChipColor(klass.subject),
+}));
 
 export const studentBreadcrumbs: StudentBreadcrumb[] = [
   { label: "홈", href: "/dashboard" },
@@ -14,50 +44,49 @@ export const studentBreadcrumbs: StudentBreadcrumb[] = [
 ];
 
 export const classSection = {
-  title: "학급 선택",
-  actionLabel: "반 관리 설정",
+  title: "수업 선택",
+  actionLabel: "수업 관리 설정",
 };
 
 export const classChips: ClassChip[] = [
   {
     id: "all",
-    label: "전체 학생",
-    count: 120,
+    label: "전체 수업",
+    count: derivedStudentRecords.length,
     color: "primary",
     icon: "folder_shared",
     variant: "all",
     active: true,
   },
-  { id: "divider-1", isDivider: true },
-  { id: "math-advanced", label: "수학 심화 A반", count: 15, color: "indigo" },
-  { id: "math-basic", label: "수학 기초 B반", count: 22, color: "indigo" },
-  {
-    id: "english-advanced",
-    label: "영어 심화 S반",
-    count: 18,
-    color: "emerald",
-  },
-  { id: "english-basic", label: "영어 기초 B반", count: 20, color: "emerald" },
-  {
-    id: "unassigned",
-    label: "신규/미배정",
-    count: 3,
-    color: "rose",
-    icon: "help_outline",
-    variant: "unassigned",
-  },
+  ...(dynamicClassChips.length > 0
+    ? [{ id: "divider-1", isDivider: true } satisfies ClassChip]
+    : []),
+  ...dynamicClassChips,
+  ...(unassignedRecords.length > 0
+    ? [
+        { id: "divider-unassigned", isDivider: true } satisfies ClassChip,
+        {
+          id: "unassigned",
+          label: "신규/미배정",
+          count: unassignedRecords.length,
+          color: "rose",
+          icon: "help_outline",
+          variant: "unassigned",
+        } satisfies ClassChip,
+      ]
+    : []),
   { id: "add-class", isAddButton: true },
 ];
 
 export const pageSummary = {
   title: "전체 학생 관리",
-  description: "총 120명의 학생 정보를 관리하고 있습니다.",
+  description: `총 ${derivedStudentRecords.length}명의 학생 정보를 관리하고 있습니다.`,
 };
 
 export const headerActions: HeaderAction[] = [
   {
     id: "bulk-transfer",
-    label: "일괄 반이동",
+    label: "수업 변경",
     icon: "swap_horiz",
     variant: "secondary",
   },
@@ -86,118 +115,159 @@ export const filterSelects: FilterSelect[] = [
     options: [
       { label: "재원중", value: "active" },
       { label: "휴원", value: "pause" },
-      { label: "졸업", value: "grad" },
+      { label: "퇴원", value: "grad" },
     ],
   },
 ];
 
-export const studentRecords: StudentRecord[] = [
-  {
-    id: "student-kim-minjun",
-    name: "김민준",
-    studentId: "ST-20230501",
-    avatarUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDLlidok0fCHuswxfn8xb4HGkpH3nCBZiLcB_riUWkSRpDng-BXb8_EUE0GKxXUtsH9JW72l_Frd-AfMG397jCLiilW2jSWSlHlnBky1NHB-JQ8dYiLPb0kpYT5Y6sbvc-mdQOKEVZjAZdBD69rVWCu4dsiJqiDuPKrIUtz33Pa4VVLEFeaB-Y4S9vpgEsw1v4ab4nilHKtIn9zh0Pxf1mjD05EAcukiCx4aRFB2CUrN0bBSaH0nszFSSLxuKu7N9irvBRcEh8OKiE",
-    className: "수학 심화 A반",
-    classColor: "indigo",
-    school: "서울고 (2학년)",
-    contact: "010-1234-5678",
-    attendance: 95,
-    attendanceVariant: "good",
-    averageScore: 90,
-    averageVariant: "good",
-    status: { label: "재원중", variant: "primary" },
-    actionLabel: "반 변경",
-  },
-  {
-    id: "student-kim-minsu",
-    name: "김민수",
-    studentId: "ST-2023001",
-    avatarUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCtUOvXgmKFKSAZtNhsB7QLfMpsfa0ES9OSQgMFowE2PeRfy47VNDEILS01zfnu7GI7p1hpeqWMJkVVhsBwyONFMaFnVdBjR7tzyTrzxfC5IwhFRpyXttPKRQ7n1ZybXyF170AcIapYZxVd-0tjqJwwdUbtCQk2omwTk4sXbrR4sS48TTwN33Oa3MCLwiJPbxAD9D366-D5LNX59BUJ_FyZLuWxcpLmWdbrDEaHLGI3cCJwTGKk9jXUwItutpabUsguCX5CYKfjvL8",
-    className: "수학 심화 A반",
-    classColor: "indigo",
-    school: "서울고 (2학년)",
-    contact: "010-1234-5678",
-    attendance: 95,
-    attendanceVariant: "good",
-    averageScore: 88,
-    averageVariant: "neutral",
-    status: { label: "재원중", variant: "primary" },
-    actionLabel: "반 변경",
-  },
-  {
-    id: "student-lee-jieun",
-    name: "이지은",
-    studentId: "ST-2023042",
-    avatarUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuB7csvCfeFQd2nfaWJdpF5k5wQzyJMRbVzhG_7nnXDH68EYPAd1JdCC0Mh1B0KWTZR4VxD4Zy6OuXbTjy_oSnQQUWiAGkobOVIUziFkWMfLI-5kGpjAU0z3JBw19CGuu1CfYnULJL2d6GdeFhGgvp9WsTTYnlxqrh3FZhU7hCtY-a5P1-DjpgpL5dUDsjpYC9Hkxa7i-TVeqbO52LfryHJ0cifo1K9pqpTx1PVfuATm8SGzbe4nfoLvNUgYKKDjbhOazDtWMV3OZsg",
-    className: "영어 기초 B반",
-    classColor: "emerald",
-    school: "강남고 (1학년)",
-    contact: "010-9876-5432",
-    attendance: 75,
-    attendanceVariant: "danger",
-    averageScore: 92,
-    averageVariant: "good",
-    status: { label: "재원중", variant: "primary" },
-    actionLabel: "반 변경",
-  },
-  {
-    id: "student-park-junhyung",
-    name: "박준형",
-    studentId: "ST-2023055",
-    avatarUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDf-dQiwcPsuNFpbrz8Eve7eISkBiG5lj4-5-X4fbaibWrBMt8FqyCKMApaRNJxGgHQ8yT9L7Xb9w_LuW0cBE2ZoH1Okf_554cW5YWfTvT_t7QO6ZtTDB6u3uEJY30s7XQjAttWJGsDFgtFU7xudSyzJh1HUl-dUY2TmGH5yQrSTpag8nwo-O_8K4E9nMpKhLd0P__xQrDSCdS6qb6mxbr-oopJrJ0Vt4ug6dq5-RN4VKapbYpcNJn53PausNFNsbazHYez7H2BwmU",
-    className: "수학 심화 A반",
-    classColor: "indigo",
-    school: "반포고 (3학년)",
-    contact: "010-5555-4444",
-    attendance: 88,
-    attendanceVariant: "warning",
-    averageScore: 76,
-    averageVariant: "neutral",
-    status: { label: "휴원", variant: "warning" },
-    actionLabel: "반 변경",
-  },
-  {
-    id: "student-choi-younghee",
-    name: "최영희",
-    studentId: "ST-2023067",
-    avatarUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuD76H7-wrkNJifE8Z2Iir3jIdxtqnlOQE4K8udLptaFtw_7-PRQ8O3iTq4qEWQ8Rmyf5n325967SeA-IWr8kV9rN9EiH9ybXRl3qTWIGT75L0oPK7raEEnlI2XkiVMu-b_qwB8P1NYopXK5cZ_s3oDtMrDe8ovpl9R_ZjqbT8EWzSiUSqAhqPGWXJqAAUWOm5IEbew2ST4D3H_T3I7OhomT8hYk9fsZWa9Y_b75gsiKMMnrzzq_TGOGTjjTA436IQuwD34b3K1AuWc",
-    className: "미배정",
-    classColor: "dashed",
-    school: "서초고 (1학년)",
-    contact: "010-3333-2222",
-    unassigned: true,
-    emptyPerformance: "데이터 없음",
-    status: { label: "재원중", variant: "primary" },
-    actionLabel: "반 배정",
-    highlight: { label: "신규", variant: "new" },
-  },
-  {
-    id: "student-jung-sujin",
-    name: "정수진",
-    studentId: "ST-2023089",
-    avatarUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDdgy_0VXTy8RorS8YHlRk4U9KRcpUrX8fznv8DmPQJ_Qw0SzD6Bd6cadOqa4VfP6ZhYCByE7N6vEiyXtzOm9v3kYfyXCn--VA2v92iooy-d4q5d_qK73jOhT93EK7B1_ssAU_DD2UbotAU5fXSR4NW1H6FlT2u-8_JsTrPKgSPyidZEE93M_1wUhjjo3J3K3jnpVRyDuaklukpF9g89ppSKXLFyztvslSCrQBcY7HytumX4NLS3oCpznVPpge3T1MYQ4YZPo-dzg0",
-    className: "수학 심화 A반",
-    classColor: "indigo",
-    school: "세화고 (2학년)",
-    contact: "010-1111-9999",
-    attendance: 91,
-    attendanceVariant: "good",
-    averageScore: 82,
-    averageVariant: "neutral",
-    status: { label: "재원중", variant: "primary" },
-    actionLabel: "반 변경",
-  },
-];
-
-export const tableSummary: StudentTableSummary = {
-  total: 120,
-  rangeLabel: "1-5",
+export const classStudentMap: Record<string, StudentRecord[]> = {
+  all: derivedStudentRecords,
 };
 
+classEntities.forEach((klass) => {
+  classStudentMap[klass.id] = studentsByClassId[klass.id] ?? [];
+});
+
+if (unassignedRecords.length > 0) {
+  classStudentMap.unassigned = unassignedRecords;
+}
+
+export const studentRecords = derivedStudentRecords;
+
+export const defaultClassId = "all";
+
 export const pagination: PaginationItem[] = ["1", "2", "3", "...", "12"];
+
+function mapStudentEntityToRecord(student: StudentEntity): StudentRecord {
+  const classInfo = student.classId
+    ? classLookup.get(student.classId)
+    : undefined;
+  const className = classInfo?.name ?? "미배정";
+  const subject = classInfo?.subject ?? "";
+  const statusLabel: StudentStatusOption = student.status ?? "재원중";
+  const attendanceVariant = getAttendanceVariant(student.attendance);
+  const averageVariant = getAverageVariant(student.averageScore);
+  const isUnassigned = !classInfo;
+
+  return {
+    id: student.id,
+    name: student.name,
+    studentId: student.studentId,
+    classId: student.classId,
+    avatarUrl: student.avatarUrl,
+    initials: student.initials ?? deriveInitials(student.name),
+    className,
+    classColor: isUnassigned
+      ? "dashed"
+      : (getStudentClassColor(subject) ?? "neutral"),
+    school: buildSchoolLabel(student),
+    contact: student.phone ?? student.contacts?.[0]?.value ?? "연락처 미등록",
+    attendance: student.attendance,
+    attendanceVariant,
+    averageScore: student.averageScore,
+    averageVariant,
+    status: {
+      label: statusLabel,
+      variant: getStatusVariant(statusLabel),
+    },
+    actionLabel: isUnassigned ? "반 배정" : "수업 변경",
+    unassigned: isUnassigned || undefined,
+    emptyPerformance: isUnassigned ? "데이터 없음" : undefined,
+    highlight: isUnassigned
+      ? {
+          label: "신규",
+          variant: "new",
+        }
+      : undefined,
+  };
+}
+
+function buildSchoolLabel(student: StudentEntity) {
+  if (!student.school && !student.gradeLabel) {
+    return "학교/학년 정보 없음";
+  }
+  if (!student.school) {
+    return student.gradeLabel ?? "학년 정보 없음";
+  }
+  if (!student.gradeLabel) {
+    return student.school;
+  }
+  return `${student.school} (${student.gradeLabel})`;
+}
+
+function getAttendanceVariant(value?: number) {
+  if (typeof value !== "number") {
+    return undefined;
+  }
+  if (value >= 90) {
+    return "good";
+  }
+  if (value >= 80) {
+    return "warning";
+  }
+  return "danger";
+}
+
+function getAverageVariant(value?: number) {
+  if (typeof value !== "number") {
+    return undefined;
+  }
+  return value >= 90 ? "good" : "neutral";
+}
+
+function getStatusVariant(label: StudentStatusOption) {
+  switch (label) {
+    case "휴원":
+      return "warning";
+    case "퇴원":
+      return "neutral";
+    default:
+      return "primary";
+  }
+}
+
+function getClassChipColor(
+  subject: ClassEntity["subject"]
+): ClassChip["color"] {
+  if (subject.includes("수학")) {
+    return "indigo";
+  }
+  if (subject.includes("영어")) {
+    return "emerald";
+  }
+  if (subject.includes("과학")) {
+    return "rose";
+  }
+  return "primary";
+}
+
+function getStudentClassColor(
+  subject?: ClassEntity["subject"]
+): StudentRecord["classColor"] {
+  if (!subject) {
+    return "neutral";
+  }
+  if (subject.includes("수학")) {
+    return "indigo";
+  }
+  if (subject.includes("영어")) {
+    return "emerald";
+  }
+  return "neutral";
+}
+
+function deriveInitials(name: string) {
+  if (!name) {
+    return "ST";
+  }
+  const trimmed = name.trim();
+  if (trimmed.length <= 2) {
+    return trimmed;
+  }
+  return trimmed
+    .split(" ")
+    .map((segment) => segment[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}

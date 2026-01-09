@@ -34,6 +34,7 @@ export type StudentRecord = {
   id: string;
   name: string;
   studentId: string;
+  classId?: string;
   avatarUrl?: string;
   initials?: string;
   className: string;
@@ -57,9 +58,65 @@ export type StudentRecord = {
   emptyPerformance?: string;
 };
 
+export type StudentStatusOption = "재원중" | "휴원" | "퇴원";
+
 export type StudentTableSummary = {
   total: number;
   rangeLabel: string;
 };
 
 export type PaginationItem = string;
+
+export type StudentContact = {
+  label: string;
+  icon: string;
+  value: string;
+};
+
+export type StudentMetric = {
+  label: string;
+  value: string;
+  icon: string;
+  meta?: string;
+  variant?: "positive" | "warning";
+};
+
+export type StudentSubject = {
+  icon: string;
+  title: string;
+  description: string;
+  score: number;
+};
+
+export type AttendanceHeatmapEntry = {
+  day: number;
+  variant: "attendance" | "late" | "absent" | "none";
+};
+
+export type CounselingLog = {
+  title: string;
+  date: string;
+  description: string;
+  variant: "primary" | "secondary";
+};
+
+export type StudentDetail = {
+  id: string;
+  name: string;
+  status: string;
+  school: string;
+  grade: string;
+  studentId: string;
+  heroAvatar: string;
+  contacts: StudentContact[];
+  metrics: StudentMetric[];
+  subjects: StudentSubject[];
+  attendanceHeatmap: AttendanceHeatmapEntry[];
+  memoPlaceholder: string;
+  counselingLogs: CounselingLog[];
+};
+
+export type StudentEditProfile = Pick<
+  StudentDetail,
+  "id" | "name" | "school" | "grade" | "status" | "contacts"
+>;

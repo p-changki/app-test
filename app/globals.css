@@ -38,6 +38,22 @@ body {
     color 0.2s ease;
 }
 
+.light .bg-white.text-white,
+.light .bg-white .text-white,
+.light .bg-gray-50.text-white,
+.light .bg-gray-50 .text-white,
+.light .bg-slate-50.text-white,
+.light .bg-slate-50 .text-white,
+.light .bg-surface-light.text-white,
+.light .bg-surface-light .text-white {
+  color: var(--surface-text) !important;
+}
+
+.light .keep-text-white,
+.light .keep-text-white * {
+  color: #ffffff !important;
+}
+
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: var(--surface-border) transparent;
