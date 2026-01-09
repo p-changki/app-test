@@ -6,7 +6,17 @@ import { lexend, notoSansKr } from "@/lib/fonts";
 import { iconClass } from "@/lib/icon-class";
 import { cn } from "@/lib/utils";
 
-const summaryStats = [
+type SummaryStat = {
+  title: string;
+  value: string;
+  suffix: string;
+  trend: string;
+  trendClass: string;
+  icon: string;
+  iconClass: string;
+};
+
+const summaryStats: SummaryStat[] = [
   {
     title: "전체 재시험 대상자",
     value: "42",
@@ -44,7 +54,7 @@ const summaryStats = [
     icon: "today",
     iconClass: "text-blue-600 bg-blue-50 dark:bg-blue-900/30",
   },
-] as const;
+];
 
 const classFilterOptions = [
   "전체 학급",

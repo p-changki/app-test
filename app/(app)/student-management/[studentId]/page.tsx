@@ -40,6 +40,10 @@ type StudentDetail = {
   }>;
 };
 
+type StudentDetailPageProps = {
+  params: Promise<{ studentId: string }>;
+};
+
 const studentDetailData: Record<string, StudentDetail> = {
   "student-kim-minjun": {
     id: "student-kim-minjun",
@@ -133,12 +137,11 @@ export const metadata: Metadata = {
   description: "선택한 학생의 성취도와 상담 정보를 확인할 수 있습니다.",
 };
 
-export default function StudentDetailPage({
+export default async function StudentDetailPage({
   params,
-}: {
-  params: { studentId: string };
-}) {
-  const student = studentDetailData[params.studentId] ?? fallbackStudent;
+}: StudentDetailPageProps) {
+  const { studentId } = await params;
+  const student = studentDetailData[studentId] ?? fallbackStudent;
 
   return (
     <div

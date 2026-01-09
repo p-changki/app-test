@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 
+import type { RetestRequest } from "@/features/exam-retest/types";
 import { iconClass } from "@/lib/icon-class";
-
-import type { RetestRequest } from "@/app/(app)/exam-retest-proposals/page";
 
 export function RetestRescheduleButton({
   request,

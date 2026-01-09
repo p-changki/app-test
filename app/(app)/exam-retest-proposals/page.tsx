@@ -4,6 +4,7 @@ import { AssistantSubNav } from "@/components/layout/AssistantSubNav";
 import { examSubNavLinks } from "@/constants/examSubNavLinks";
 import { RetestAcceptButton } from "@/features/exam-retest/RetestAcceptButton";
 import { RetestRescheduleButton } from "@/features/exam-retest/RetestRescheduleButton";
+import type { RetestRequest } from "@/features/exam-retest/types";
 import { lexend, notoSansKr } from "@/lib/fonts";
 import { iconClass } from "@/lib/icon-class";
 import { cn } from "@/lib/utils";
@@ -34,21 +35,6 @@ const summaryCards = [
     bg: "bg-blue-50 dark:bg-blue-900/20",
   },
 ] as const;
-
-export type RetestRequest = {
-  id: string;
-  name: string;
-  badgeColor: string;
-  statusLabel: string;
-  statusColor: string;
-  classLabel: string;
-  proposedAt: string;
-  subject: string;
-  preferredTime: string;
-  reason: string;
-  location: string;
-  teacher: string;
-};
 
 const requests: readonly RetestRequest[] = [
   {

@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 
+import type { RetestRequest } from "@/features/exam-retest/types";
 import { lexend } from "@/lib/fonts";
 import { iconClass } from "@/lib/icon-class";
 import { cn } from "@/lib/utils";
-
-import type { RetestRequest } from "@/app/(app)/exam-retest-proposals/page";
 
 export function RetestAcceptButton({ request }: { request: RetestRequest }) {
   const [open, setOpen] = useState(false);
