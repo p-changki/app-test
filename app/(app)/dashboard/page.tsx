@@ -230,24 +230,24 @@ function PageHero() {
           오늘의 업무와 소통 현황을 한눈에 확인하세요.
         </p>
       </div>
-      <div className="flex flex-wrap gap-3">
+      <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap md:w-auto md:justify-end">
         <Link
           href="/schedule-management"
-          className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-[#1a2632] dark:text-slate-200 dark:hover:bg-slate-800"
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-[#1a2632] dark:text-slate-200 dark:hover:bg-slate-800 sm:w-auto"
         >
           <span className={iconClass("text-[20px]")}>calendar_today</span>
           일정 관리
         </Link>
         <Link
           href="/assistant-approvals"
-          className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-[#1a2632] dark:text-slate-200 dark:hover:bg-slate-800"
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-[#1a2632] dark:text-slate-200 dark:hover:bg-slate-800 sm:w-auto"
         >
           <span className={iconClass("text-[20px]")}>how_to_reg</span>
           가입 승인 관리
         </Link>
         <Link
           href="/assistant-management"
-          className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-[#1a2632] dark:text-slate-200 dark:hover:bg-slate-800"
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-[#1a2632] dark:text-slate-200 dark:hover:bg-slate-800 sm:w-auto"
         >
           <span className={iconClass("text-[20px]")}>supervisor_account</span>
           조교 관리
@@ -256,6 +256,7 @@ function PageHero() {
           variant="primary"
           buttonLabel="새 업무 등록"
           icon="add"
+          className="w-full justify-center sm:w-auto"
         />
       </div>
     </div>
@@ -323,51 +324,88 @@ function InquiryTable() {
           전체보기
         </a>
       </header>
-      <div className="custom-scrollbar overflow-x-auto">
-        <table className="w-full border-collapse text-left">
-          <thead>
-            <tr className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:bg-[#131d27] dark:text-slate-400">
-              <th className="px-6 py-3">구분</th>
-              <th className="px-6 py-3">이름</th>
-              <th className="w-2/5 px-6 py-3">문의 내용</th>
-              <th className="px-6 py-3">등록일</th>
-              <th className="px-6 py-3 text-right">상태</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-            {inquiryRows.map((row) => (
-              <tr
-                key={`${row.name}-${row.date}`}
-                className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50"
-              >
-                <td className="px-6 py-4">
-                  <span
-                    className={cn(
-                      "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                      row.type === "학생"
-                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200"
-                        : "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200"
-                    )}
-                  >
-                    {row.type}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-sm font-medium text-slate-900 dark:text-white">
-                  {row.name}
-                </td>
-                <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
-                  {row.message}
-                </td>
-                <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
-                  {row.date}
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <StatusBadge label={row.status} variant={row.statusVariant} />
-                </td>
+      <div className="hidden md:block">
+        <div className="custom-scrollbar overflow-x-auto">
+          <table className="w-full border-collapse text-left">
+            <thead>
+              <tr className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:bg-[#131d27] dark:text-slate-400">
+                <th className="px-6 py-3">구분</th>
+                <th className="px-6 py-3">이름</th>
+                <th className="w-2/5 px-6 py-3">문의 내용</th>
+                <th className="px-6 py-3">등록일</th>
+                <th className="px-6 py-3 text-right">상태</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+              {inquiryRows.map((row) => (
+                <tr
+                  key={`${row.name}-${row.date}`}
+                  className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                >
+                  <td className="px-6 py-4">
+                    <span
+                      className={cn(
+                        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+                        row.type === "학생"
+                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200"
+                          : "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200"
+                      )}
+                    >
+                      {row.type}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-sm font-medium text-slate-900 dark:text-white">
+                    {row.name}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
+                    {row.message}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
+                    {row.date}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <StatusBadge
+                      label={row.status}
+                      variant={row.statusVariant}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div className="space-y-3 px-4 py-4 md:hidden">
+        {inquiryRows.map((row) => (
+          <div
+            key={`${row.name}-${row.date}-mobile`}
+            className="rounded-xl border border-slate-100 bg-slate-50/80 p-4 text-sm text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-200"
+          >
+            <div className="flex items-center justify-between text-xs text-slate-500">
+              <span
+                className={cn(
+                  "inline-flex items-center rounded-full px-2.5 py-0.5 font-semibold",
+                  row.type === "학생"
+                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200"
+                    : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200"
+                )}
+              >
+                {row.type}
+              </span>
+              <span>{row.date}</span>
+            </div>
+            <p className="mt-2 text-base font-semibold text-slate-900 dark:text-white">
+              {row.name}
+            </p>
+            <p className="mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+              {row.message}
+            </p>
+            <div className="mt-3 flex items-center justify-between">
+              <span className="text-xs text-slate-500">상태</span>
+              <StatusBadge label={row.status} variant={row.statusVariant} />
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );
@@ -385,69 +423,128 @@ function TaskTable() {
         </div>
         <DashboardTaskAssignmentModal buttonLabel="+ 업무 추가" icon="add" />
       </header>
-      <div className="custom-scrollbar overflow-x-auto">
-        <table className="w-full border-collapse text-left">
-          <thead>
-            <tr className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:bg-[#131d27] dark:text-slate-400">
-              <th className="w-1/3 px-6 py-3">지시 업무명</th>
-              <th className="px-6 py-3">대상 조교</th>
-              <th className="px-6 py-3">기한 (D-Day)</th>
-              <th className="px-6 py-3">진행률</th>
-              <th className="px-6 py-3 text-right">진행 상태</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-            {taskRows.map((row) => (
-              <tr
-                key={row.title}
-                className="group transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50"
-              >
-                <td className="px-6 py-4">
-                  <TaskDetailModal task={row}>
-                    <div className="flex items-center gap-3">
-                      <div className="flex size-8 items-center justify-center rounded bg-slate-100 text-slate-600 dark:bg-slate-900/30 dark:text-slate-300">
-                        <span className={iconClass("text-[18px]")}>
-                          {row.icon}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-slate-900 dark:text-white">
-                          {row.title}
-                        </p>
-                        <p className="text-xs text-slate-500">{row.subTitle}</p>
-                      </div>
-                    </div>
-                  </TaskDetailModal>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="size-6 rounded-full bg-cover bg-center"
-                      style={{ backgroundImage: `url(${row.avatar})` }}
-                    />
-                    <span className="text-sm text-slate-700 dark:text-slate-300">
-                      {row.ta}
-                    </span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">
-                  {row.due}
-                </td>
-                <td className="px-6 py-4">
-                  <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700">
-                    <div
-                      className="h-2 rounded-full bg-primary"
-                      style={{ width: `${row.progress}%` }}
-                    />
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <StatusBadge label={row.status} variant={row.statusVariant} />
-                </td>
+      <div className="hidden md:block">
+        <div className="custom-scrollbar overflow-x-auto">
+          <table className="w-full border-collapse text-left">
+            <thead>
+              <tr className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:bg-[#131d27] dark:text-slate-400">
+                <th className="w-1/3 px-6 py-3">지시 업무명</th>
+                <th className="px-6 py-3">대상 조교</th>
+                <th className="px-6 py-3">기한 (D-Day)</th>
+                <th className="px-6 py-3">진행률</th>
+                <th className="px-6 py-3 text-right">진행 상태</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+              {taskRows.map((row) => (
+                <tr
+                  key={row.title}
+                  className="group transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                >
+                  <td className="px-6 py-4">
+                    <TaskDetailModal task={row}>
+                      <div className="flex items-center gap-3">
+                        <div className="flex size-8 items-center justify-center rounded bg-slate-100 text-slate-600 dark:bg-slate-900/30 dark:text-slate-300">
+                          <span className={iconClass("text-[18px]")}>
+                            {row.icon}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-slate-900 dark:text-white">
+                            {row.title}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {row.subTitle}
+                          </p>
+                        </div>
+                      </div>
+                    </TaskDetailModal>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="size-6 rounded-full bg-cover bg-center"
+                        style={{ backgroundImage: `url(${row.avatar})` }}
+                      />
+                      <span className="text-sm text-slate-700 dark:text-slate-300">
+                        {row.ta}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">
+                    {row.due}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700">
+                      <div
+                        className="h-2 rounded-full bg-primary"
+                        style={{ width: `${row.progress}%` }}
+                      />
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <StatusBadge
+                      label={row.status}
+                      variant={row.statusVariant}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div className="space-y-3 px-4 py-4 md:hidden">
+        {taskRows.map((row) => (
+          <TaskDetailModal
+            key={`${row.title}-mobile`}
+            task={row}
+            triggerClassName="rounded-xl border border-slate-100 bg-slate-50/80 p-4 text-left shadow-sm dark:border-slate-700 dark:bg-slate-900/40"
+          >
+            <div className="flex flex-col gap-3 text-sm text-slate-600 dark:text-slate-300">
+              <div className="flex items-center gap-3">
+                <div className="flex size-10 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-200">
+                  <span className={iconClass("text-[20px]")}>{row.icon}</span>
+                </div>
+                <div>
+                  <p className="text-base font-semibold text-slate-900 dark:text-white">
+                    {row.title}
+                  </p>
+                  <p className="text-xs text-slate-500">{row.subTitle}</p>
+                </div>
+              </div>
+              <div className="flex items-center justify-between text-xs text-slate-500">
+                <div className="flex items-center gap-2">
+                  <div
+                    className="size-6 rounded-full bg-cover bg-center"
+                    style={{ backgroundImage: `url(${row.avatar})` }}
+                  />
+                  <span className="font-medium text-slate-700 dark:text-slate-200">
+                    {row.ta}
+                  </span>
+                </div>
+                <span className="font-semibold text-slate-600 dark:text-slate-300">
+                  {row.due}
+                </span>
+              </div>
+              <div>
+                <div className="h-2 rounded-full bg-slate-200 dark:bg-slate-800">
+                  <div
+                    className="h-2 rounded-full bg-primary"
+                    style={{ width: `${row.progress}%` }}
+                  />
+                </div>
+                <p className="mt-1 text-xs text-slate-500">
+                  진행률 {row.progress}%
+                </p>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-500">상태</span>
+                <StatusBadge label={row.status} variant={row.statusVariant} />
+              </div>
+            </div>
+          </TaskDetailModal>
+        ))}
       </div>
     </section>
   );
