@@ -104,7 +104,7 @@ export default function LoginPage() {
             {loginRoles.map((role) => (
               <label
                 key={role}
-                className="group relative flex h-full grow cursor-pointer items-center justify-center overflow-hidden rounded-full px-2 text-[#9b92c9] transition-all duration-300 hover:bg-white/5 has-[:checked]:bg-primary has-[:checked]:text-white has-[:checked]:shadow-lg"
+                className="group relative flex h-full grow cursor-pointer items-center justify-center overflow-hidden rounded-full px-2 text-[#9b92c9] transition-all duration-300 hover:bg-white/5 has-checked:bg-primary has-checked:text-white has-checked:shadow-lg"
               >
                 <span className="truncate text-sm font-bold tracking-wide">
                   {role}
@@ -189,9 +189,9 @@ export default function LoginPage() {
         </button>
       </form>
       <div className="relative flex items-center py-2 text-[#7f799f] dark:text-[#9b92c9]">
-        <div className="flex-grow border-t border-[#292348]" />
+        <div className="grow border-t border-[#292348]" />
         <span className="mx-4 text-sm">소셜 계정으로 로그인</span>
-        <div className="flex-grow border-t border-[#292348]" />
+        <div className="grow border-t border-[#292348]" />
       </div>
       <div className="flex justify-center gap-4">
         {socialProviders.map((provider) => (
