@@ -1,7 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
+import {
+  createInquiryForStudent,
+  useInquiryStore,
+  type InquiryAttachment,
+  type InquiryActor,
+} from "@/features/inquiry-dashboard/inquiryStore";
 import type { ResourceItem } from "@/features/learning-resources/types";
 import { iconClass } from "@/lib/icon-class";
 import { cn } from "@/lib/utils";
@@ -13,6 +19,7 @@ type ResourceTableProps = {
 const ResourceTable = ({ initialResources }: ResourceTableProps) => {
   const [items, setItems] = useState<ResourceItem[]>(initialResources);
   const [selected, setSelected] = useState<ResourceItem | null>(null);
+  const [sendTarget, setSendTarget] = useState<ResourceItem | null>(null);
   useEffect(() => {
     setItems(initialResources);
   }, [initialResources]);
@@ -73,6 +80,16 @@ const ResourceTable = ({ initialResources }: ResourceTableProps) => {
         <ResourceDetailModal
           resource={selected}
           onClose={() => setSelected(null)}
+          onSend={(resource) => {
+            setSelected(null);
+            setSendTarget(resource);
+          }}
+        />
+      ) : null}
+      {sendTarget ? (
+        <SendInquiryModal
+          resource={sendTarget}
+          onClose={() => setSendTarget(null)}
         />
       ) : null}
     </>
@@ -163,9 +180,11 @@ const ResourceRow = ({ resource, onSelect }: ResourceRowProps) => (
 function ResourceDetailModal({
   resource,
   onClose,
+  onSend,
 }: {
   resource: ResourceItem;
   onClose: () => void;
+  onSend?: (resource: ResourceItem) => void;
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -294,6 +313,17 @@ function ResourceDetailModal({
           >
             닫기
           </button>
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+            onClick={() => onSend?.(resource)}
+          >
+            <span className={iconClass("text-base")}>send</span>
+            학생 문의로 보내기
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+              학생 전용
+            </span>
+          </button>
           {resource.videoEmbedUrl ? (
             <button
               type="button"
@@ -318,6 +348,276 @@ function ResourceDetailModal({
               다운로드
             </button>
           )}
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+type StudentOption = {
+  id: string;
+  name: string;
+  grade?: string;
+};
+
+function SendInquiryModal({
+  resource,
+  onClose,
+}: {
+  resource: ResourceItem;
+  onClose: () => void;
+}) {
+  const inquiries = useInquiryStore();
+  const [senderRole, setSenderRole] = useState<InquiryActor>("instructor");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [search, setSearch] = useState("");
+  const [message, setMessage] = useState("");
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const studentOptions = useMemo(() => {
+    const map = new Map<string, StudentOption>();
+    inquiries.forEach((inquiry) => {
+      if (!map.has(inquiry.student.studentId)) {
+        map.set(inquiry.student.studentId, {
+          id: inquiry.student.studentId,
+          name: inquiry.student.name,
+          grade: inquiry.student.grade,
+        });
+      }
+    });
+    return Array.from(map.values());
+  }, [inquiries]);
+
+  const filteredStudents = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return studentOptions;
+    return studentOptions.filter((student) => {
+      return (
+        student.name.toLowerCase().includes(query) ||
+        student.id.toLowerCase().includes(query) ||
+        student.grade?.toLowerCase().includes(query)
+      );
+    });
+  }, [search, studentOptions]);
+
+  useEffect(() => {
+    setMessage(
+      `${resource.title} 자료를 공유드립니다.\n\n${resource.description}\n\n첨부된 자료를 확인해주세요.`
+    );
+  }, [resource]);
+
+  const toggleStudent = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const buildAttachments = (): InquiryAttachment[] => {
+    const attachments: InquiryAttachment[] = [];
+    if (resource.fileLink) {
+      attachments.push({
+        id: `${resource.id}-file`,
+        label: `${resource.title} 자료 링크`,
+        url: resource.fileLink,
+        kind: "file",
+        size: resource.size,
+      });
+    }
+    if (resource.videoEmbedUrl) {
+      attachments.push({
+        id: `${resource.id}-live`,
+        label: `${resource.title} 라이브`,
+        embedUrl: resource.videoEmbedUrl,
+        url: resource.videoEmbedUrl,
+        kind: "video",
+      });
+    }
+    return attachments;
+  };
+
+  const handleSend = () => {
+    if (!selectedIds.length) {
+      setNotice("전송할 학생을 선택해주세요.");
+      return;
+    }
+    const trimmedMessage = message.trim();
+    if (!trimmedMessage) {
+      setNotice("전송 메시지를 입력해주세요.");
+      return;
+    }
+    const base = inquiries[0];
+    const attachments = buildAttachments();
+    const senderName =
+      senderRole === "assistant"
+        ? (base?.assistant?.name ?? "담당 조교")
+        : resource.uploader.name;
+
+    selectedIds.forEach((id) => {
+      const student = studentOptions.find((option) => option.id === id);
+      if (!student) return;
+      createInquiryForStudent({
+        title: `[자료 공유] ${resource.title}`,
+        content: trimmedMessage,
+        category: "자료 공유",
+        role: senderRole,
+        author: senderName,
+        student: {
+          name: student.name,
+          studentId: student.id,
+          grade: student.grade,
+        },
+        instructor: base?.instructor,
+        attachments,
+        status: "답변 완료",
+      });
+    });
+    setNotice(`${selectedIds.length}명에게 전송했습니다.`);
+    setSelectedIds([]);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div className="relative z-10 w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+        <header className="flex items-start justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800">
+          <div>
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              학습 자료 전달
+            </p>
+            <div className="flex items-center gap-2">
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
+                학생 문의로 보내기
+              </h3>
+              <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                학생 전용
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              {resource.title} 자료를 선택한 학생에게 문의 메시지로 전달합니다.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full p-2 text-slate-500 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+          >
+            <span className={iconClass("text-lg")}>close</span>
+          </button>
+        </header>
+        <div className="space-y-6 px-6 py-5 text-sm text-slate-600 dark:text-slate-200">
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-semibold text-slate-500 dark:text-slate-300">
+              발신자 선택
+            </label>
+            <div className="flex w-full max-w-md items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2 dark:border-slate-700 dark:bg-slate-800/50">
+              {(["assistant", "instructor"] as InquiryActor[]).map((role) => {
+                const isActive = senderRole === role;
+                return (
+                  <button
+                    key={role}
+                    type="button"
+                    className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                      isActive
+                        ? "bg-primary text-white"
+                        : "text-slate-500 hover:text-primary"
+                    }`}
+                    onClick={() => setSenderRole(role)}
+                  >
+                    {role === "assistant" ? "조교" : "강사"}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-semibold text-slate-500 dark:text-slate-300">
+              학생 선택
+            </label>
+            <input
+              type="text"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="학생 이름 또는 학번 검색"
+              className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/40 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+            />
+            <div className="max-h-48 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-2 dark:border-slate-700 dark:bg-slate-800/40">
+              {filteredStudents.length ? (
+                filteredStudents.map((student) => {
+                  const isChecked = selectedIds.includes(student.id);
+                  return (
+                    <label
+                      key={student.id}
+                      className="flex items-center justify-between rounded-lg px-3 py-2 text-sm transition hover:bg-white/80 dark:hover:bg-slate-800"
+                    >
+                      <div>
+                        <p className="font-semibold text-slate-900 dark:text-white">
+                          {student.name}
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          학번 {student.id}
+                          {student.grade ? ` · ${student.grade}` : ""}
+                        </p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => toggleStudent(student.id)}
+                        className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary/20"
+                      />
+                    </label>
+                  );
+                })
+              ) : (
+                <p className="p-4 text-center text-xs text-slate-500 dark:text-slate-400">
+                  검색 결과가 없습니다.
+                </p>
+              )}
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              선택된 학생 {selectedIds.length}명
+            </p>
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-semibold text-slate-500 dark:text-slate-300">
+              전송 메시지
+            </label>
+            <textarea
+              value={message}
+              onChange={(event) => setMessage(event.target.value)}
+              className="min-h-[140px] rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/40 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+            />
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-800/40 dark:text-slate-400">
+            {resource.videoEmbedUrl
+              ? "라이브 링크가 포함된 자료는 학생 문의 상세에서 바로 재생됩니다."
+              : "첨부 자료는 학생 문의 상세 페이지에서 바로 확인할 수 있습니다."}
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+              학부모는 전송 대상에서 제외됩니다.
+            </p>
+          </div>
+          {notice ? (
+            <p className="text-xs font-semibold text-primary">{notice}</p>
+          ) : null}
+        </div>
+        <footer className="flex items-center justify-end gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4 dark:border-slate-800 dark:bg-slate-900/40">
+          <button
+            type="button"
+            className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+            onClick={onClose}
+          >
+            닫기
+          </button>
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90"
+            onClick={handleSend}
+          >
+            <span className={iconClass("text-base")}>send</span>
+            문의 전송
+          </button>
         </footer>
       </div>
     </div>

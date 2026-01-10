@@ -19,7 +19,7 @@ export default function AuthLayout({
               className="h-full w-full bg-cover bg-center opacity-60 mix-blend-overlay"
               style={{ backgroundImage: `url(${HERO_IMAGE})` }}
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-[#131022]/40 via-[#4b2bee]/20 to-[#131022]" />
+            <div className="absolute inset-0 bg-linear-to-b from-[#131022]/40 via-[#4b2bee]/20 to-[#131022]" />
           </div>
           <div className="relative z-10 flex flex-col justify-between gap-12">
             <div className="flex items-center gap-3">
