@@ -25,6 +25,7 @@ type RegisterFormState = {
   school: string;
   grade: string;
   contact: string;
+  parentContact: string;
   classId: string;
 };
 
@@ -34,6 +35,7 @@ const emptyRegisterForm: RegisterFormState = {
   school: "",
   grade: "",
   contact: "",
+  parentContact: "",
   classId: "",
 };
 
@@ -296,6 +298,14 @@ export function StudentActionsPanel({
                   placeholder="010-1234-5678"
                   value={registerForm.contact}
                   onChange={(value) => handleRegisterChange("contact", value)}
+                />
+                <FormField
+                  label="학부모 연락처"
+                  placeholder="010-9876-5432"
+                  value={registerForm.parentContact}
+                  onChange={(value) =>
+                    handleRegisterChange("parentContact", value)
+                  }
                 />
                 <label className="flex flex-col gap-2 text-sm text-slate-300">
                   <span>배정 수업</span>
