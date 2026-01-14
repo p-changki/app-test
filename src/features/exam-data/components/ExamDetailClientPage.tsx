@@ -53,12 +53,6 @@ export function ExamDetailClientPage({ examId }: { examId: string }) {
                 </Link>
               </li>
               <li>/</li>
-              <li>
-                <Link className="hover:text-primary" href="/exam-answer-entry">
-                  시험지 목록
-                </Link>
-              </li>
-              <li>/</li>
               <li className="font-medium text-slate-900 dark:text-white">
                 시험 상세
               </li>
@@ -83,7 +77,7 @@ export function ExamDetailClientPage({ examId }: { examId: string }) {
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <AssistantSubNav
-                activeHref="/exam-answer-entry"
+                activeHref="/exam-dashboard"
                 links={examSubNavLinks}
               />
               <Link

@@ -1,19 +1,65 @@
+"use client";
+
+import { useMemo } from "react";
+import Link from "next/link";
+
 import { AssistantSubNav } from "@/components/layout/AssistantSubNav";
 import { examSubNavLinks } from "@/constants/examSubNavLinks";
-import { GradeReportModal } from "@/features/exam-dashboard/GradeReportModal";
+import { examStats, tableFilters } from "@/data/exams";
+import { studentEntities } from "@/data/students";
 import { AssignmentsTableSection } from "@/features/exam-dashboard/components/overview/AssignmentsTableSection";
-import { FlaggedAssignmentsSection } from "@/features/exam-dashboard/components/overview/FlaggedAssignmentsSection";
 import { StatsGrid } from "@/features/exam-dashboard/components/overview/StatsGrid";
-import {
-  assignmentRows,
-  examStats,
-  flaggedAssignments,
-  tableFilters,
-} from "@/data/exams";
+import { useExamStore } from "@/features/exam-data/examStore";
+import { useExamResultStore } from "@/features/exam-grade-entry/examResultStore";
 import { lexend, notoSansKr } from "@/lib/fonts";
+import { iconClass } from "@/lib/icon-class";
 import { cn } from "@/lib/utils";
+import type { AssignmentRow } from "@/types/exams";
 
 export function ExamDashboardOverview() {
+  const exams = useExamStore();
+  const results = useExamResultStore((state) => state.results);
+  const rows = useMemo<AssignmentRow[]>(() => {
+    return exams.map((exam) => {
+      const students = studentEntities.filter(
+        (student) => student.classId === exam.classId
+      );
+      const examResults = results[exam.id] ?? {};
+      const submittedCount = students.filter(
+        (student) => !!examResults[student.id]
+      ).length;
+      const totalCount = students.length || 1;
+      const progress = Math.round((submittedCount / totalCount) * 100);
+      const isComplete = exam.status === "채점 완료";
+      const icon = exam.subject.includes("독해") ? "menu_book" : "spellcheck";
+      const iconClass = exam.subject.includes("독해")
+        ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400"
+        : "bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400";
+
+      return {
+        id: exam.id,
+        title: exam.title,
+        subtitle: `${exam.examType} · ${exam.source}`,
+        icon,
+        iconClass,
+        classLabel: exam.targetClass,
+        dueDate: exam.createdAt.replace(/-/g, ". "),
+        submitted: `${submittedCount}/${students.length}`,
+        progress,
+        status: {
+          label: isComplete ? "채점 완료" : "진행 중",
+          color: isComplete
+            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400"
+            : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
+        },
+        primaryAction: {
+          label: "채점하기",
+          variant: "primary",
+          href: `/exam-grade-entry/${exam.id}`,
+        },
+      };
+    });
+  }, [exams, results]);
   return (
     <div
       className={cn(
@@ -43,11 +89,16 @@ export function ExamDashboardOverview() {
             links={examSubNavLinks}
             className="ml-auto"
           />
-          <GradeReportModal />
+          <Link
+            href="/exam-report-send"
+            className="flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 font-medium text-white shadow-sm shadow-primary/30 transition hover:bg-[#1a6bbd]"
+          >
+            <span className={iconClass("text-lg")}>sms</span>
+            성적표 발송
+          </Link>
         </div>
         <StatsGrid stats={examStats} />
-        <FlaggedAssignmentsSection assignments={flaggedAssignments} />
-        <AssignmentsTableSection filters={tableFilters} rows={assignmentRows} />
+        <AssignmentsTableSection filters={tableFilters} rows={rows} />
       </div>
     </div>
   );

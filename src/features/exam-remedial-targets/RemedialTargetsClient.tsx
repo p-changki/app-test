@@ -6,49 +6,9 @@ import { iconClass } from "@/lib/icon-class";
 import { cn } from "@/lib/utils";
 import type { RemedialStudent } from "@/types/exams";
 
-const statusStyleMap: Record<string, { badgeClass: string; dotClass: string }> =
-  {
-    미예약: {
-      badgeClass:
-        "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-      dotClass: "bg-red-500",
-    },
-    "알림 발송 완료": {
-      badgeClass:
-        "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400",
-      dotClass: "bg-slate-500",
-    },
-    "예약 완료": {
-      badgeClass:
-        "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-      dotClass: "bg-blue-500",
-    },
-    "제안 검토 중": {
-      badgeClass:
-        "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
-      dotClass: "bg-orange-500",
-    },
-    "재시험 완료": {
-      badgeClass:
-        "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
-      dotClass: "bg-emerald-500",
-    },
-  };
-
-const defaultStatusStyle = {
-  badgeClass:
-    "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
-  dotClass: "bg-slate-400",
-};
-
-const applyStatusStyle = (label: string) => {
-  return statusStyleMap[label] ?? defaultStatusStyle;
-};
-
 type RemedialTargetsClientProps = {
   classOptions: readonly string[];
   examOptions: readonly string[];
-  statusOptions: readonly string[];
   students: RemedialStudent[];
   onSend?: (payload: {
     exam: string;
@@ -60,7 +20,6 @@ type RemedialTargetsClientProps = {
 export function RemedialTargetsClient({
   classOptions,
   examOptions,
-  statusOptions,
   students,
   onSend,
 }: RemedialTargetsClientProps) {
@@ -68,32 +27,12 @@ export function RemedialTargetsClient({
     "안녕하세요 {학생명}님,\n지난 {시험명} 재시험이 필요합니다.\n링크를 통해 참석 여부를 알려주세요.";
   const [selectedClass, setSelectedClass] = useState(classOptions[0]);
   const [selectedExam, setSelectedExam] = useState(examOptions[0]);
-  const [selectedStatus, setSelectedStatus] = useState(statusOptions[0]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [sendModalOpen, setSendModalOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [channel, setChannel] = useState<"kakao" | "sms">("kakao");
   const [message, setMessage] = useState(defaultMessage);
-  const [statusOverrides, setStatusOverrides] = useState<
-    Record<string, string>
-  >({});
   const [completedIds, setCompletedIds] = useState<string[]>([]);
-  const [completeTargetId, setCompleteTargetId] = useState<string | null>(null);
-  const rowStatusOptions = useMemo(() => {
-    const filtered = statusOptions.filter(
-      (option) => option !== statusOptions[0]
-    );
-    return filtered.includes("재시험 완료")
-      ? filtered
-      : [...filtered, "재시험 완료"];
-  }, [statusOptions]);
-  const baseStatusMap = useMemo(() => {
-    const map: Record<string, string> = {};
-    students.forEach((student) => {
-      map[student.id] = student.status.label;
-    });
-    return map;
-  }, [students]);
 
   const closeSendModal = () => {
     setSendModalOpen(false);
@@ -102,42 +41,17 @@ export function RemedialTargetsClient({
     setChannel("kakao");
   };
 
-  const activeStudents = useMemo(() => {
-    const completedSet = new Set(completedIds);
-    return students
-      .filter((student) => !completedSet.has(student.id))
-      .map((student) => {
-        const override = statusOverrides[student.id];
-        const nextStatus = override ?? student.status.label;
-        return {
-          ...student,
-          status: { label: nextStatus, ...applyStatusStyle(nextStatus) },
-        };
-      });
-  }, [students, completedIds, statusOverrides]);
-
   const filteredStudents = useMemo(() => {
-    return activeStudents.filter((student) => {
+    return students.filter((student) => {
       const matchClass =
         selectedClass === classOptions[0] ||
         student.classLabel.includes(selectedClass.replace("전체 ", ""));
       const matchExam =
         selectedExam === examOptions[0] ||
         student.examName.includes(selectedExam);
-      const matchStatus =
-        selectedStatus === statusOptions[0] ||
-        student.status.label === selectedStatus;
-      return matchClass && matchExam && matchStatus;
+      return matchClass && matchExam;
     });
-  }, [
-    activeStudents,
-    selectedClass,
-    selectedExam,
-    selectedStatus,
-    classOptions,
-    examOptions,
-    statusOptions,
-  ]);
+  }, [students, selectedClass, selectedExam, classOptions, examOptions]);
 
   const toggleAll = (checked: boolean) => {
     setSelectedIds(
@@ -152,7 +66,7 @@ export function RemedialTargetsClient({
   };
 
   const handleSendConfirm = () => {
-    const recipients = activeStudents.filter((student) =>
+    const recipients = students.filter((student) =>
       selectedIds.includes(student.id)
     );
     if (recipients.length === 0) return;
@@ -167,29 +81,15 @@ export function RemedialTargetsClient({
 
   const sendDisabled = selectedIds.length === 0;
 
-  const handleStatusChange = (id: string, nextStatus: string) => {
-    setStatusOverrides((prev) => {
-      const original = baseStatusMap[id];
-      if (!original || original === nextStatus) {
-        if (!prev[id]) {
-          return prev;
-        }
-        const next = { ...prev };
-        delete next[id];
-        return next;
-      }
-      return { ...prev, [id]: nextStatus };
+  const handleCompleteSelected = () => {
+    if (selectedIds.length === 0) return;
+    setCompletedIds((prev) => {
+      const next = new Set(prev);
+      selectedIds.forEach((id) => next.add(id));
+      return Array.from(next);
     });
+    setSelectedIds([]);
   };
-
-  const handleComplete = (id: string) => {
-    setCompletedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
-    setSelectedIds((prev) => prev.filter((value) => value !== id));
-  };
-  const completeTarget = useMemo(
-    () => activeStudents.find((student) => student.id === completeTargetId),
-    [activeStudents, completeTargetId]
-  );
 
   useEffect(() => {
     const detail = { disabled: sendDisabled, count: selectedIds.length };
@@ -221,12 +121,6 @@ export function RemedialTargetsClient({
           value={selectedExam}
           onChange={setSelectedExam}
         />
-        <InlineSelect
-          label="상태"
-          options={statusOptions}
-          value={selectedStatus}
-          onChange={setSelectedStatus}
-        />
         <div className="ml-auto flex items-center gap-2">
           <button className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800">
             <span className={iconClass("text-xl")}>filter_list</span>
@@ -235,11 +129,23 @@ export function RemedialTargetsClient({
             onClick={() => {
               setSelectedClass(classOptions[0]);
               setSelectedExam(examOptions[0]);
-              setSelectedStatus(statusOptions[0]);
             }}
             className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
           >
             <span className={iconClass("text-xl")}>refresh</span>
+          </button>
+          <button
+            type="button"
+            disabled={selectedIds.length === 0}
+            onClick={handleCompleteSelected}
+            className={cn(
+              "rounded-lg px-3 py-2 text-xs font-semibold shadow-sm transition",
+              selectedIds.length === 0
+                ? "cursor-not-allowed bg-slate-100 text-slate-400"
+                : "bg-primary text-white hover:bg-primary/90"
+            )}
+          >
+            완료 표시
           </button>
         </div>
       </section>
@@ -271,7 +177,6 @@ export function RemedialTargetsClient({
                 <th className="px-6 py-4">미통과 시험명</th>
                 <th className="px-6 py-4">점수 / 컷</th>
                 <th className="px-6 py-4">미통과 일자</th>
-                <th className="px-6 py-4">진행 상태</th>
                 <th className="px-6 py-4 text-right">재시험 확인</th>
               </tr>
             </thead>
@@ -282,15 +187,13 @@ export function RemedialTargetsClient({
                   row={student}
                   checked={selectedIds.includes(student.id)}
                   onToggle={toggleOne}
-                  statusOptions={rowStatusOptions}
-                  onStatusChange={handleStatusChange}
-                  onRequestComplete={setCompleteTargetId}
+                  completed={completedIds.includes(student.id)}
                 />
               ))}
               {filteredStudents.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={6}
                     className="px-6 py-8 text-center text-sm text-slate-500 dark:text-slate-400"
                   >
                     선택된 조건에 해당하는 학생이 없습니다.
@@ -390,7 +293,7 @@ export function RemedialTargetsClient({
                   대상 학생 ({selectedIds.length}명)
                 </p>
                 <ul className="mt-2 space-y-1 text-sm">
-                  {activeStudents
+                  {students
                     .filter((student) => selectedIds.includes(student.id))
                     .map((student) => (
                       <li
@@ -421,54 +324,6 @@ export function RemedialTargetsClient({
                   {channel === "kakao" ? "chat" : "sms"}
                 </span>
                 {channel === "kakao" ? "카카오톡 발송" : "SMS 발송"}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-      {completeTarget ? (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => setCompleteTargetId(null)}
-          />
-          <div className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900">
-            <div className="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                재시험 완료 확인
-              </h3>
-            </div>
-            <div className="space-y-3 px-6 py-5 text-sm text-slate-600 dark:text-slate-300">
-              <p>
-                <span className="font-semibold text-slate-900 dark:text-white">
-                  {completeTarget.name}
-                </span>{" "}
-                학생의 재시험 처리를 완료하시겠습니까?
-              </p>
-              <p className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-300">
-                선택된 시험:{" "}
-                <span className="text-slate-900 dark:text-white">
-                  {completeTarget.examName}
-                </span>
-              </p>
-            </div>
-            <div className="flex items-center justify-end gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4 dark:border-slate-800 dark:bg-slate-900/40">
-              <button
-                type="button"
-                onClick={() => setCompleteTargetId(null)}
-                className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  handleComplete(completeTarget.id);
-                  setCompleteTargetId(null);
-                }}
-                className="rounded-lg bg-emerald-500 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-600"
-              >
-                확인
               </button>
             </div>
           </div>
@@ -511,16 +366,12 @@ function StudentRow({
   row,
   checked,
   onToggle,
-  statusOptions,
-  onStatusChange,
-  onRequestComplete,
+  completed,
 }: {
   row: RemedialStudent;
   checked: boolean;
   onToggle: (id: string, next: boolean) => void;
-  statusOptions: string[];
-  onStatusChange: (id: string, status: string) => void;
-  onRequestComplete: (id: string) => void;
+  completed: boolean;
 }) {
   return (
     <tr className="transition hover:bg-slate-50 dark:hover:bg-slate-800/30">
@@ -529,6 +380,7 @@ function StudentRow({
           type="checkbox"
           checked={checked}
           onChange={(event) => onToggle(row.id, event.target.checked)}
+          disabled={completed}
           className="rounded border-slate-300 text-primary focus:ring-primary dark:border-slate-600 dark:bg-slate-800"
         />
       </td>
@@ -558,38 +410,23 @@ function StudentRow({
         <span className="text-xs text-slate-400"> / {row.cutline}</span>
       </td>
       <td className="px-6 py-4 text-sm text-slate-500">{row.failDate}</td>
-      <td className="px-6 py-4">
-        <label
+      <td className="px-6 py-4 text-right">
+        <span
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold",
-            row.status.badgeClass
+            "inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold",
+            completed
+              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+              : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
           )}
         >
           <span
-            className={cn("h-1.5 w-1.5 rounded-full", row.status.dotClass)}
+            className={cn(
+              "h-1.5 w-1.5 rounded-full",
+              completed ? "bg-emerald-500" : "bg-slate-400"
+            )}
           />
-          <select
-            value={row.status.label}
-            onChange={(event) => onStatusChange(row.id, event.target.value)}
-            className="bg-transparent text-[11px] font-bold text-inherit focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            aria-label={`${row.name} 진행 상태 선택`}
-          >
-            {statusOptions.map((option) => (
-              <option key={option} value={option} className="text-slate-900">
-                {option}
-              </option>
-            ))}
-          </select>
-        </label>
-      </td>
-      <td className="px-6 py-4 text-right">
-        <button
-          type="button"
-          onClick={() => onRequestComplete(row.id)}
-          className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-600 transition hover:bg-emerald-500/20 dark:text-emerald-300"
-        >
-          완료 표시
-        </button>
+          {completed ? "완료 표시" : "알림 예정"}
+        </span>
       </td>
     </tr>
   );

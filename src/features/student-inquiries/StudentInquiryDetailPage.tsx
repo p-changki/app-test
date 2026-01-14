@@ -21,10 +21,6 @@ type StatusMeta = {
 };
 
 const STATUS_META: Record<InquiryStatus, StatusMeta> = {
-  "조교 이관": {
-    label: "대기 중",
-    badgeClass: "bg-slate-100 text-slate-500",
-  },
   "강사 검토": {
     label: "처리 중",
     badgeClass: "bg-amber-100 text-amber-700",
@@ -141,7 +137,7 @@ export function StudentInquiryDetailPage({ inquiryId }: { inquiryId: string }) {
 
   const statusMeta = inquiry
     ? STATUS_META[inquiry.status]
-    : STATUS_META["조교 이관"];
+    : STATUS_META["강사 검토"];
   const initialMessage = inquiry?.messages.find(
     (message) => message.kind === "initial"
   );
@@ -247,7 +243,7 @@ export function StudentInquiryDetailPage({ inquiryId }: { inquiryId: string }) {
               className="hover:text-primary"
               onClick={() => router.push("/student-inquiries")}
             >
-              문의 관리
+              소통
             </button>
             <span className="material-symbols-outlined text-sm">
               chevron_right

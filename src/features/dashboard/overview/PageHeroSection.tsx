@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { DashboardTaskAssignmentModal } from "@/features/dashboard/TaskAssignmentModal";
 import { lexend } from "@/lib/fonts";
 import { iconClass } from "@/lib/icon-class";
 import { cn } from "@/lib/utils";
@@ -22,21 +21,15 @@ export function PageHeroSection() {
         </p>
       </div>
       <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap md:w-auto md:justify-end">
-        <QuickLink href="/schedule-management" icon="calendar_today">
-          일정 관리
+        <QuickLink href="/class-management" icon="menu_book">
+          수업 관리
         </QuickLink>
-        <QuickLink href="/assistant-approvals" icon="how_to_reg">
-          가입 승인 관리
+        <QuickLink href="/student-management" icon="groups">
+          학생 관리
         </QuickLink>
-        <QuickLink href="/assistant-management" icon="supervisor_account">
-          조교 관리
+        <QuickLink href="/exam-dashboard" icon="assignment">
+          시험 현황
         </QuickLink>
-        <DashboardTaskAssignmentModal
-          variant="primary"
-          buttonLabel="새 업무 등록"
-          icon="add"
-          className="w-full justify-center sm:w-auto"
-        />
       </div>
     </div>
   );

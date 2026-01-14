@@ -132,6 +132,7 @@ export function ExamEditForm({ exam }: ExamEditFormProps) {
             }
             className="mt-1 w-full rounded-lg border border-slate-300 bg-[var(--surface-background)] px-3 py-2 text-sm font-medium text-slate-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-[var(--surface-background)] dark:text-white md:w-48"
           >
+            <option value="채점 완료">채점 완료</option>
             <option value="채점 중">채점 중</option>
             <option value="등록 완료">등록 완료</option>
             <option value="초안">초안</option>

@@ -15,117 +15,114 @@ import type {
   UnscheduledStudent,
 } from "@/types/exams";
 
+const buildQuestions = (
+  count: number,
+  points: number,
+  label: string,
+  source: string
+) =>
+  Array.from({ length: count }, (_, index) => ({
+    id: index + 1,
+    label: `${label} ${index + 1}`,
+    type: "객관식" as const,
+    category: label,
+    source,
+    points,
+    answer: String((index % 5) + 1),
+  }));
+
 export const examDefinitions: ExamDefinition[] = [
   {
-    id: "math-midterm-2025",
-    title: "2025학년도 1학기 중간고사 (수학)",
-    subject: "수학(미적분)",
-    classId: "class-a-2025-01",
-    targetClass: "고2 수학 A반",
-    examDate: "2025-03-16",
-    createdAt: "2025-02-28",
-    totalQuestions: 28,
+    id: "eng-preview-5",
+    title: "리포트용 영어 모의평가",
+    subject: "영어(독해)",
+    examType: "모의고사",
+    source: "학원 제작",
+    classId: "class-eng-preview-2025-01",
+    targetClass: "고2 영어 리포트반",
+    examDate: "2026-01-13",
+    createdAt: "2026-01-10",
+    totalQuestions: 5,
     totalScore: 100,
-    passScore: 70,
-    status: "채점 중",
-    summary:
-      "미적분 4-6장을 중심으로 구성된 중간고사입니다. 응시 완료 후 채점률은 65%이며, 주관식 일부 문항의 채점 기준을 검토 중입니다.",
-    notes: [
-      "주관식 2번 채점 기준(계산 과정 포인트) 확인 필요",
-      "결시 1명, 3/20 보충 예정",
-    ],
-    questions: [
-      { id: 1, label: "극한 계산", type: "객관식", points: 4, answer: "3" },
-      { id: 2, label: "미분 응용", type: "주관식", points: 8, answer: "12√3" },
-      { id: 3, label: "적분 영역", type: "객관식", points: 4, answer: "2" },
-      {
-        id: 4,
-        label: "도함수",
-        type: "주관식",
-        points: 10,
-        answer: "f'(x)=3x^2+1",
-      },
-    ],
-  },
-  {
-    id: "eng-quiz-08",
-    title: "3월 2주차 어휘 퀴즈",
-    subject: "영어(어휘)",
-    classId: "class-c-2025-01",
-    targetClass: "고1 영어 B반",
-    examDate: "2025-03-09",
-    createdAt: "2025-03-05",
-    totalQuestions: 20,
-    totalScore: 40,
-    passScore: 32,
-    status: "등록 완료",
-    summary:
-      "학습량 측정을 위한 소규모 퀴즈입니다. 채점이 완료되어 리포트 발송 준비를 마쳤습니다.",
-    notes: ["15~20번 챌린지 문항, 오답률 60%", "정답지 PDF 업로드 완료"],
-    questions: [
-      { id: 1, label: "어휘 1", type: "객관식", points: 2, answer: "A" },
-      { id: 2, label: "어휘 2", type: "객관식", points: 2, answer: "C" },
-      { id: 3, label: "관용구", type: "O/X", points: 2, answer: "O" },
-    ],
-  },
-  {
-    id: "mock-sat-01",
-    title: "파이널 모의고사 1회",
-    subject: "수학(기하)",
-    classId: "class-b-2025-01",
-    targetClass: "고3 파이널 대비반",
-    examDate: "2025-03-30",
-    createdAt: "2025-03-12",
-    totalQuestions: 30,
-    totalScore: 120,
     passScore: 80,
-    status: "초안",
-    summary:
-      "11월 수능 난이도를 가정한 모의고사 초안입니다. 문항별 정답 입력 및 배점 조정이 남아 있습니다.",
-    notes: ["벡터/표면적분 문항 검토 필요", "감독 인력 2명 요청"],
-    questions: [
-      { id: 1, label: "표면적분", type: "객관식", points: 5, answer: "2" },
-      {
-        id: 2,
-        label: "벡터 방정식",
-        type: "주관식",
-        points: 8,
-        answer: "x=3t+1",
-      },
-    ],
+    status: "채점 완료",
+    summary: "시험 리포트 예시용 모의평가입니다.",
+    notes: ["리포트 시안 검수"],
+    questions: buildQuestions(5, 20, "독해", "리포트 시안"),
+  },
+  {
+    id: "eng-reading-basic-20",
+    title: "영어 독해 기본 평가",
+    subject: "영어(독해)",
+    examType: "단원 평가",
+    source: "학원 제작",
+    classId: "class-eng-a-2025-01",
+    targetClass: "고1 영어 A반",
+    examDate: "2025-03-20",
+    createdAt: "2025-03-10",
+    totalQuestions: 20,
+    totalScore: 100,
+    passScore: 80,
+    status: "등록 완료",
+    summary: "독해 기본 개념 이해도를 확인하는 평가입니다.",
+    notes: ["지문 길이 조정 필요", "오답 노트 필수"],
+    questions: buildQuestions(20, 5, "독해", "교재 A"),
+  },
+  {
+    id: "eng-grammar-listening-50",
+    title: "영어 문법+듣기 종합",
+    subject: "영어(문법/듣기)",
+    examType: "모의고사",
+    source: "기출+자체",
+    classId: "class-eng-b-2025-01",
+    targetClass: "고2 영어 심화반",
+    examDate: "2025-03-27",
+    createdAt: "2025-03-15",
+    totalQuestions: 50,
+    totalScore: 100,
+    passScore: 80,
+    status: "등록 완료",
+    summary: "문법과 듣기를 통합한 실전 모의고사입니다.",
+    notes: ["듣기 파트 재생 장비 점검"],
+    questions: buildQuestions(50, 2, "문법/듣기", "기출+자체"),
   },
 ];
 
+const clinicClassIds = new Set(
+  classEntities
+    .filter((klass) => {
+      const hasAlert = (klass.alerts ?? []).some((alert) =>
+        ["보충", "결시", "클리닉"].some((keyword) => alert.includes(keyword))
+      );
+      const hasFocusTag = (klass.focusTags ?? []).some((tag) =>
+        ["보충", "결시", "클리닉"].some((keyword) => tag.includes(keyword))
+      );
+      return hasAlert || hasFocusTag;
+    })
+    .map((klass) => klass.id)
+);
+
+const clinicExamCount = examDefinitions.filter((exam) =>
+  clinicClassIds.has(exam.classId)
+).length;
+
 export const examStats: ExamStatCard[] = [
   {
-    title: "채점 대기",
-    value: "12",
-    subtitle: "어제 대비 +3건",
-    icon: "pending_actions",
+    title: "총 시험 등록",
+    value: `${examDefinitions.length}개`,
+    subtitle: "등록된 시험 수",
+    icon: "content_paste",
     accentClass:
-      "bg-orange-100 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400",
+      "bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400",
   },
   {
-    title: "미통과/과락",
-    value: "7",
-    subtitle: "기준 점수 미달",
-    variant: "critical",
-  },
-  {
-    title: "평균 점수",
-    value: "83.5",
-    subtitle: "반 평균",
-    icon: "analytics",
+    title: "클리닉 대상 시험",
+    value: `${clinicExamCount}개`,
+    subtitle: "클리닉 대상 클래스 기준",
+    icon: "local_hospital",
     accentClass:
-      "bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400",
-  },
-  {
-    title: "미제출",
-    value: "4",
-    subtitle: "조치 필요",
-    icon: "warning",
-    accentClass:
-      "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400",
+      "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400",
+    href: "/exam-remedial-targets",
   },
 ];
 
@@ -179,79 +176,73 @@ export const flaggedAssignments: FlaggedAssignment[] = [
 
 export const assignmentRows: AssignmentRow[] = [
   {
-    id: "math-midterm",
-    title: "중간고사 수학 복습",
-    subtitle: "미적분 4-6장",
-    icon: "calculate",
+    id: "eng-preview-5",
+    title: "리포트용 영어 모의평가",
+    subtitle: "모의고사 · 학원 제작",
+    icon: "menu_book",
+    iconClass:
+      "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400",
+    classLabel: "고2 영어 리포트반",
+    dueDate: "2026. 01. 10",
+    submitted: "3/3",
+    progress: 100,
+    status: {
+      label: "채점 중",
+      color:
+        "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
+    },
+    primaryAction: {
+      label: "채점하기",
+      variant: "primary",
+      href: "/exam-grade-entry/eng-preview-5",
+    },
+  },
+  {
+    id: "eng-reading-basic-20",
+    title: "영어 독해 기본 평가",
+    subtitle: "단원 평가 · 학원 제작",
+    icon: "menu_book",
     iconClass:
       "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400",
-    classLabel: "고등 수학 A",
-    dueDate: "2023. 10. 24",
-    submitted: "25/30",
-    progress: 83,
+    classLabel: "고1 영어 A반",
+    dueDate: "2025. 03. 10",
+    submitted: "0/5",
+    progress: 0,
     status: {
       label: "진행 중",
       color:
-        "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+        "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
     },
-    primaryAction: { label: "채점하기", variant: "primary" },
+    primaryAction: {
+      label: "채점하기",
+      variant: "primary",
+      href: "/exam-grade-entry/eng-reading-basic-20",
+    },
   },
   {
-    id: "english-quiz",
-    title: "어휘 퀴즈 3",
-    subtitle: "영어 기초",
-    icon: "menu_book",
-    iconClass:
-      "bg-pink-100 text-pink-600 dark:bg-pink-900/30 dark:text-pink-400",
-    classLabel: "영어 101",
-    dueDate: "2023. 10. 25",
-    submitted: "0/20",
+    id: "eng-grammar-listening-50",
+    title: "영어 문법+듣기 종합",
+    subtitle: "모의고사 · 기출+자체",
+    icon: "spellcheck",
+    iconClass: "bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400",
+    classLabel: "고2 영어 심화반",
+    dueDate: "2025. 03. 15",
+    submitted: "0/5",
     progress: 0,
     status: {
-      label: "게시됨",
-      color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-    },
-    primaryAction: { label: "상세보기", variant: "muted" },
-  },
-  {
-    id: "physics-report",
-    title: "물리 실험 보고서",
-    subtitle: "운동과 힘",
-    icon: "science",
-    iconClass:
-      "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400",
-    classLabel: "과학 B",
-    dueDate: "2023. 10. 20",
-    submitted: "28/28",
-    progress: 100,
-    status: {
-      label: "마감됨",
+      label: "진행 중",
       color:
-        "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-400",
+        "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
     },
-    primaryAction: { label: "검토", variant: "primary" },
-  },
-  {
-    id: "history-essay",
-    title: "역사 에세이",
-    subtitle: "산업 혁명",
-    icon: "history_edu",
-    iconClass:
-      "bg-teal-100 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400",
-    classLabel: "역사 101",
-    dueDate: "2023. 11. 01",
-    submitted: "초안",
-    progress: 0,
-    status: {
-      label: "임시 저장",
-      color:
-        "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+    primaryAction: {
+      label: "채점하기",
+      variant: "primary",
+      href: "/exam-grade-entry/eng-grammar-listening-50",
     },
-    primaryAction: { label: "수정", variant: "primary" },
   },
 ];
 
-export const tableFilters: string[] = ["진행 중", "임시 저장", "채점 완료"];
+export const tableFilters: string[] = ["진행 중", "채점 완료"];
 
 export const gradeEntryClassOptions: readonly string[] = [
   "전체 클래스",
@@ -397,15 +388,12 @@ export const reportTemplates: readonly ReportTemplate[] = [
 
 export const classFilterOptions = [
   "전체 수업",
-  "수학 A반 (심화)",
-  "수학 B반 (기초)",
-  "영어 C반",
+  ...classEntities.map((klass) => klass.name),
 ] as const;
 
 export const examFilterOptions = [
   "모든 시험",
-  "주간 테스트 (11/20)",
-  "단원 평가 (미적분)",
+  ...examDefinitions.map((exam) => exam.title),
 ] as const;
 
 export const statusFilterOptions = [
@@ -419,7 +407,7 @@ export const statusFilterOptions = [
 
 export const remedialSummaryStats: RemedialSummaryStat[] = [
   {
-    title: "전체 재시험 대상자",
+    title: "전체 클리닉 대상자",
     value: "42",
     suffix: "명",
     trend: "+3%",

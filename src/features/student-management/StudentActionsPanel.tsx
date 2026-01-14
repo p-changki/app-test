@@ -21,21 +21,21 @@ type StudentActionsPanelProps = {
 
 type RegisterFormState = {
   name: string;
-  studentId: string;
   school: string;
   grade: string;
   contact: string;
   parentContact: string;
+  registeredAt: string;
   classId: string;
 };
 
 const emptyRegisterForm: RegisterFormState = {
   name: "",
-  studentId: "",
   school: "",
   grade: "",
   contact: "",
   parentContact: "",
+  registeredAt: new Date().toISOString().slice(0, 10),
   classId: "",
 };
 
@@ -49,6 +49,7 @@ export function StudentActionsPanel({
   const [registerOpen, setRegisterOpen] = useState(false);
   const [classMoveOpen, setClassMoveOpen] = useState(false);
   const [alertOpen, setAlertOpen] = useState(false);
+  const [bulkAttendanceOpen, setBulkAttendanceOpen] = useState(false);
   const [registerForm, setRegisterForm] =
     useState<RegisterFormState>(emptyRegisterForm);
   const [registerStatus, setRegisterStatus] = useState<
@@ -67,14 +68,21 @@ export function StudentActionsPanel({
   const [alertMessage, setAlertMessage] = useState("");
   const [alertTemplate, setAlertTemplate] = useState("absent-reminder");
   const [alertError, setAlertError] = useState<string | null>(null);
-  const [alertChannel, setAlertChannel] = useState<"kakao" | "sms">("kakao");
+  const [alertChannel, setAlertChannel] = useState<"kakao">("kakao");
   const [alertTargetRecipient, setAlertTargetRecipient] = useState<
     "all" | "student" | "parent"
   >("all");
-  const [alertSchedule, setAlertSchedule] = useState("before-1hour");
+  const [alertSchedule, setAlertSchedule] = useState(
+    new Date().toISOString().slice(0, 16)
+  );
   const [alertAutoSend, setAlertAutoSend] = useState(false);
   const [activeAlertStudent, setActiveAlertStudent] =
     useState<StudentRecord | null>(null);
+  const [bulkAttendanceDate, setBulkAttendanceDate] = useState(
+    new Date().toISOString().slice(0, 10)
+  );
+  const [bulkAttendanceStatus, setBulkAttendanceStatus] = useState("출석");
+  const [bulkAttendanceNote, setBulkAttendanceNote] = useState("");
 
   const classOptions = useMemo(
     () =>
@@ -228,6 +236,30 @@ export function StudentActionsPanel({
             </button>
           );
         })}
+        <button
+          type="button"
+          className={cn(
+            "flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors sm:w-auto",
+            selectedStudents.length > 0
+              ? "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+              : "cursor-not-allowed border border-slate-200/60 bg-white/60 text-slate-400 dark:border-slate-700/60 dark:bg-slate-800/40 dark:text-slate-500"
+          )}
+          onClick={() => {
+            if (selectedStudents.length === 0) {
+              setAlertError("출결을 등록할 학생을 선택해 주세요.");
+              setTimeout(() => setAlertError(null), 2000);
+              return;
+            }
+            setBulkAttendanceDate(new Date().toISOString().slice(0, 10));
+            setBulkAttendanceStatus("출석");
+            setBulkAttendanceNote("");
+            setBulkAttendanceOpen(true);
+          }}
+        >
+          <span className={iconClass("text-[18px]")}>edit_calendar</span>
+          <span className="hidden sm:inline">출결 등록</span>
+          <span className="sm:hidden">출결등록</span>
+        </button>
       </div>
       {alertError ? (
         <p className="text-sm text-rose-400">{alertError}</p>
@@ -276,12 +308,6 @@ export function StudentActionsPanel({
                   onChange={(value) => handleRegisterChange("name", value)}
                 />
                 <FormField
-                  label="학생 ID"
-                  placeholder="ST-2024001"
-                  value={registerForm.studentId}
-                  onChange={(value) => handleRegisterChange("studentId", value)}
-                />
-                <FormField
                   label="학교"
                   placeholder="서울고등학교"
                   value={registerForm.school}
@@ -306,6 +332,14 @@ export function StudentActionsPanel({
                   onChange={(value) =>
                     handleRegisterChange("parentContact", value)
                   }
+                />
+                <FormField
+                  label="학생 등록 날짜"
+                  value={registerForm.registeredAt}
+                  onChange={(value) =>
+                    handleRegisterChange("registeredAt", value)
+                  }
+                  inputType="date"
                 />
                 <label className="flex flex-col gap-2 text-sm text-slate-300">
                   <span>배정 수업</span>
@@ -560,12 +594,6 @@ export function StudentActionsPanel({
                         icon: "chat_bubble",
                         accent: "text-yellow-300",
                       },
-                      {
-                        id: "sms",
-                        label: "SMS (문자)",
-                        icon: "sms",
-                        accent: "text-slate-400",
-                      },
                     ].map((channel) => (
                       <label
                         key={channel.id}
@@ -580,7 +608,7 @@ export function StudentActionsPanel({
                           className="size-4 border-[#3b4754] text-emerald-500 focus:ring-emerald-500"
                           checked={alertChannel === channel.id}
                           onChange={() =>
-                            setAlertChannel(channel.id as "kakao" | "sms")
+                            setAlertChannel(channel.id as "kakao")
                           }
                         />
                         <span className="font-medium">{channel.label}</span>
@@ -642,7 +670,7 @@ export function StudentActionsPanel({
                     </p>
                   </div>
                   <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-400">
-                    {alertChannel === "kakao" ? "카카오톡" : "SMS"}
+                    카카오톡
                   </span>
                 </div>
               </div>
@@ -704,18 +732,12 @@ export function StudentActionsPanel({
                   <span className="text-xs font-bold uppercase text-slate-400">
                     발송 일정
                   </span>
-                  <select
+                  <input
+                    type="datetime-local"
                     className="rounded-lg border border-[#3b4754] bg-[#111418] px-3 py-2 text-sm text-white focus:border-emerald-400 focus:outline-none"
                     value={alertSchedule}
                     onChange={(event) => setAlertSchedule(event.target.value)}
-                  >
-                    <option value="before-1hour">
-                      수업 시작 1시간 전 (추천)
-                    </option>
-                    <option value="before-30min">수업 시작 30분 전</option>
-                    <option value="before-24h">수업 24시간 전</option>
-                    <option value="now">지금 즉시 발송</option>
-                  </select>
+                  />
                 </label>
                 <div className="flex items-center justify-between rounded-lg border border-[#3b4754] bg-[#111418] p-4">
                   <div>
@@ -767,6 +789,106 @@ export function StudentActionsPanel({
           </form>
         </Modal>
       )}
+
+      {bulkAttendanceOpen && (
+        <Modal
+          onClose={() => setBulkAttendanceOpen(false)}
+          className="w-full max-w-3xl rounded-3xl border border-slate-800 bg-[#05090f] p-6 text-white"
+        >
+          <div className="flex flex-col gap-4">
+            <header className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div>
+                <p className="text-xs uppercase tracking-widest text-primary">
+                  출결 등록
+                </p>
+                <h3 className="text-2xl font-semibold text-white">
+                  선택 학생 출결 등록
+                </h3>
+                <p className="text-sm text-slate-400">
+                  선택한 학생들에게 동일한 출결 정보를 적용합니다.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="rounded-full border border-slate-800 p-2 text-slate-400 transition hover:text-white"
+                onClick={() => setBulkAttendanceOpen(false)}
+              >
+                <span className={iconClass("text-[20px]")}>close</span>
+              </button>
+            </header>
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="flex flex-col gap-2 text-sm text-slate-300">
+                <span>수업 일자</span>
+                <input
+                  type="date"
+                  className="rounded-lg border border-slate-800 bg-[#0c1219] px-3 py-2 text-sm text-white outline-none focus:border-primary"
+                  value={bulkAttendanceDate}
+                  onChange={(event) =>
+                    setBulkAttendanceDate(event.target.value)
+                  }
+                />
+              </label>
+              <label className="flex flex-col gap-2 text-sm text-slate-300">
+                <span>출결 상태</span>
+                <select
+                  className="rounded-lg border border-slate-800 bg-[#0c1219] px-3 py-2 text-sm text-white outline-none focus:border-primary"
+                  value={bulkAttendanceStatus}
+                  onChange={(event) =>
+                    setBulkAttendanceStatus(event.target.value)
+                  }
+                >
+                  <option value="출석">출석</option>
+                  <option value="지각">지각</option>
+                  <option value="결석">결석</option>
+                  <option value="조퇴">조퇴</option>
+                </select>
+              </label>
+              <label className="md:col-span-2 flex flex-col gap-2 text-sm text-slate-300">
+                <span>메모</span>
+                <textarea
+                  className="min-h-[90px] rounded-xl border border-slate-800 bg-[#0c1219] px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-primary focus:outline-none"
+                  placeholder="특이사항을 입력하세요."
+                  value={bulkAttendanceNote}
+                  onChange={(event) =>
+                    setBulkAttendanceNote(event.target.value)
+                  }
+                />
+              </label>
+            </div>
+            <div className="rounded-xl border border-slate-800 bg-[#0c1219] p-4">
+              <p className="text-xs font-semibold text-slate-400">
+                선택된 학생 ({selectedStudents.length}명)
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {selectedStudents.map((student) => (
+                  <span
+                    key={`attendance-${student.id}`}
+                    className="rounded-full border border-slate-700 bg-[#1a2028] px-3 py-1 text-xs font-medium text-slate-200"
+                  >
+                    {student.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                className="rounded-lg border border-slate-800 px-4 py-2 text-sm text-slate-300 transition hover:text-white"
+                onClick={() => setBulkAttendanceOpen(false)}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                className="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#1a6bbd]"
+                onClick={() => setBulkAttendanceOpen(false)}
+              >
+                등록하기
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </>
   );
 }
@@ -776,16 +898,19 @@ function FormField({
   value,
   onChange,
   placeholder,
+  inputType,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  inputType?: "text" | "date";
 }) {
   return (
     <label className="flex flex-col gap-2 text-sm text-slate-300">
       <span>{label}</span>
       <input
+        type={inputType ?? "text"}
         className="rounded-lg border border-slate-800 bg-[#0c1219] px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-primary focus:outline-none"
         value={value}
         placeholder={placeholder}

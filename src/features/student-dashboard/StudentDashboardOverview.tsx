@@ -1,23 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
-  Bar,
-  BarChart,
   CartesianGrid,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 
-import { classEntities } from "@/data/classes";
 import {
-  CourseEnrollmentModal,
-  EnrollmentConfirmModal,
-} from "@/features/student-profile/components/CourseEnrollmentModals";
+  RetestListModal,
+  allRetestSchedules,
+} from "@/features/student-classes/StudentClassesSchedule";
 import { lexend, notoSansKr } from "@/lib/fonts";
 import { iconClass } from "@/lib/icon-class";
 import { cn } from "@/lib/utils";
@@ -29,6 +27,7 @@ type HighlightCard = {
   accent: string;
   meta?: ReactNode;
   actionLabel?: string;
+  onAction?: () => void;
   href?: string;
 };
 
@@ -42,13 +41,13 @@ type ExamResult = {
   status: "통과" | "평균";
 };
 
-const performanceTrend = [
-  { month: "3월", score: 70 },
-  { month: "4월", score: 85 },
-  { month: "5월", score: 60 },
-  { month: "6월", score: 90 },
-  { month: "7월", score: 80 },
-  { month: "8월", score: 65 },
+const recentExamTrend = [
+  { label: "9/01", score: 86 },
+  { label: "9/12", score: 78 },
+  { label: "9/24", score: 91 },
+  { label: "10/05", score: 84 },
+  { label: "10/16", score: 93 },
+  { label: "10/28", score: 88 },
 ];
 
 const examResults: ExamResult[] = [
@@ -88,50 +87,6 @@ const attendanceSummary = {
   tardy: 2,
 };
 
-const highlightCards: HighlightCard[] = [
-  {
-    label: "재시험 필요",
-    value: "1과목",
-    icon: "event_busy",
-    accent: "text-red-500 bg-red-50 dark:bg-red-900/20",
-    actionLabel: "예약하기",
-  },
-  {
-    label: "수학 석차",
-    value: "상위 10%",
-    icon: "bar_chart",
-    accent: "text-blue-500 bg-blue-50 dark:bg-blue-900/20",
-    meta: (
-      <span className="flex items-center text-xs font-bold text-emerald-500">
-        <span className={iconClass("mr-0.5 text-xs")}>trending_up</span> 2.5%
-      </span>
-    ),
-  },
-  {
-    label: "평균 점수",
-    value: "88.5점",
-    icon: "school",
-    accent: "text-purple-500 bg-purple-50 dark:bg-purple-900/20",
-    meta: (
-      <span className="flex items-center text-xs font-bold text-emerald-500">
-        <span className={iconClass("mr-0.5 text-xs")}>trending_up</span> 1.2점
-      </span>
-    ),
-  },
-  {
-    label: "출석 현황",
-    value: `${attendanceSummary.rate}%`,
-    icon: "schedule",
-    accent: "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20",
-    href: "/student-attendance",
-    meta: (
-      <span className="text-xs font-medium text-slate-400">
-        결석 {attendanceSummary.absent}일 · 지각 {attendanceSummary.tardy}일
-      </span>
-    ),
-  },
-];
-
 const upcomingClasses = [
   {
     month: "10월",
@@ -160,34 +115,47 @@ const statusClasses: Record<ExamResult["status"], string> = {
 };
 
 export function StudentDashboardOverview() {
-  const [isEnrollmentOpen, setEnrollmentOpen] = useState(false);
-  const [isConfirmOpen, setConfirmOpen] = useState(false);
-  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
-  const [subjectFilter, setSubjectFilter] = useState("전체");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [isRetestListOpen, setRetestListOpen] = useState(false);
 
-  const uniqueSubjects = useMemo(
-    () => ["전체", ...new Set(classEntities.map((klass) => klass.subject))],
-    []
-  );
-
-  const filteredClasses = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
-    return classEntities.filter((klass) => {
-      const matchesSubject =
-        subjectFilter === "전체" || klass.subject === subjectFilter;
-      const matchesSearch =
-        term.length === 0 ||
-        klass.name.toLowerCase().includes(term) ||
-        klass.teacher.toLowerCase().includes(term);
-      return matchesSubject && matchesSearch;
-    });
-  }, [searchTerm, subjectFilter]);
-
-  const selectedClass = useMemo(
-    () => classEntities.find((klass) => klass.id === selectedClassId),
-    [selectedClassId]
-  );
+  const highlightCards: HighlightCard[] = [
+    {
+      label: "출석 현황",
+      value: `${attendanceSummary.rate}%`,
+      icon: "schedule",
+      accent: "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20",
+      meta: (
+        <span className="text-xs font-medium text-slate-400">
+          결석 {attendanceSummary.absent}일 · 지각 {attendanceSummary.tardy}일
+        </span>
+      ),
+    },
+    {
+      label: "재시험 필요",
+      value: "1과목",
+      icon: "event_busy",
+      accent: "text-red-500 bg-red-50 dark:bg-red-900/20",
+      actionLabel: "클리닉목록",
+      onAction: () => setRetestListOpen(true),
+    },
+    {
+      label: "성적 기록용",
+      value: "",
+      icon: "school",
+      accent: "text-purple-500 bg-purple-50 dark:bg-purple-900/20",
+    },
+    {
+      label: "이전시험 석차",
+      value: "12/120",
+      icon: "bar_chart",
+      accent: "text-blue-500 bg-blue-50 dark:bg-blue-900/20",
+      meta: (
+        <span className="flex items-center text-xs font-bold text-emerald-500">
+          <span className={iconClass("mr-0.5 text-xs")}>trending_up</span> 상위
+          12등
+        </span>
+      ),
+    },
+  ];
 
   return (
     <div
@@ -215,14 +183,6 @@ export function StudentDashboardOverview() {
             </p>
           </div>
           <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
-            <button
-              type="button"
-              className="flex items-center gap-2 rounded-2xl bg-primary px-6 py-2.5 font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:bg-blue-600"
-              onClick={() => setEnrollmentOpen(true)}
-            >
-              <span className={iconClass("text-base")}>edit_calendar</span>
-              수강신청
-            </button>
             <Link
               href="/student-profile"
               className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 transition hover:shadow dark:border-slate-700 dark:bg-[#1a2632]"
@@ -271,6 +231,7 @@ export function StudentDashboardOverview() {
                     <button
                       type="button"
                       className="flex items-center text-sm font-semibold text-red-500 transition hover:underline"
+                      onClick={card.onAction}
                     >
                       {card.actionLabel}
                       <span className={iconClass("ml-1 text-xs")}>
@@ -311,16 +272,12 @@ export function StudentDashboardOverview() {
                   <button className="rounded-md bg-primary px-4 py-1.5 text-sm font-semibold text-white shadow-sm">
                     월간
                   </button>
-                  <button className="rounded-md px-4 py-1.5 text-sm font-semibold text-slate-500 transition hover:bg-white dark:text-slate-400 dark:hover:bg-slate-700">
-                    주간
-                  </button>
                 </div>
               </div>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={performanceTrend}
-                    barSize={40}
+                  <LineChart
+                    data={recentExamTrend}
                     margin={{ top: 10, left: -20, right: 20, bottom: 0 }}
                   >
                     <CartesianGrid
@@ -329,7 +286,7 @@ export function StudentDashboardOverview() {
                       stroke="rgba(148, 163, 184, 0.4)"
                     />
                     <XAxis
-                      dataKey="month"
+                      dataKey="label"
                       axisLine={false}
                       tickLine={false}
                       tick={{ fill: "#94a3b8", fontSize: 12 }}
@@ -348,16 +305,15 @@ export function StudentDashboardOverview() {
                         color: "var(--surface-text)",
                       }}
                     />
-                    <Bar
+                    <Line
                       dataKey="score"
-                      fill="#3B82F6"
-                      radius={[12, 12, 0, 0]}
-                      background={{
-                        fill: "rgba(59, 130, 246, 0.15)",
-                        radius: 12,
-                      }}
+                      type="monotone"
+                      stroke="#3B82F6"
+                      strokeWidth={3}
+                      dot={{ r: 4, fill: "#3B82F6" }}
+                      activeDot={{ r: 6 }}
                     />
-                  </BarChart>
+                  </LineChart>
                 </ResponsiveContainer>
               </div>
             </article>
@@ -365,12 +321,12 @@ export function StudentDashboardOverview() {
             <article className="rounded-2xl border border-slate-100 bg-white shadow-sm dark:border-slate-800 dark:bg-[#1a2632]">
               <div className="flex items-center justify-between border-b border-slate-50 px-8 py-6 dark:border-slate-800">
                 <h2 className="text-xl font-bold">최근 시험 결과</h2>
-                <button
-                  type="button"
+                <Link
+                  href="/student-grades"
                   className="text-sm font-semibold text-primary hover:underline"
                 >
                   전체 보기
-                </button>
+                </Link>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
@@ -437,38 +393,46 @@ export function StudentDashboardOverview() {
           </div>
 
           <div className="space-y-8">
-            <article className="relative overflow-hidden rounded-2xl bg-primary p-8 text-white shadow-xl shadow-blue-500/30">
-              <div className="absolute -right-4 -bottom-4 opacity-20">
-                <span className={iconClass("text-9xl")}>campaign</span>
-              </div>
-              <div className="relative z-10 space-y-8">
-                <div className="flex items-center gap-2">
-                  <span className={iconClass("text-xl")}>campaign</span>
-                  <h2 className="text-lg font-bold">공지사항</h2>
+            <Link
+              href="/student-inquiries"
+              className="block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-background)]"
+            >
+              <article className="relative overflow-hidden rounded-2xl bg-primary p-8 text-white shadow-xl shadow-blue-500/30 transition hover:-translate-y-0.5 hover:shadow-blue-500/40">
+                <div className="absolute -right-4 -bottom-4 opacity-20">
+                  <span className={iconClass("text-9xl")}>campaign</span>
                 </div>
-                {announcements.map((notice, index) => (
-                  <div key={notice.title}>
-                    <div className="mb-2 flex items-center justify-between text-[10px] uppercase">
-                      <span className="rounded bg-white/20 px-2 py-0.5 font-bold">
-                        {notice.tag}
-                      </span>
-                      <span className="opacity-70">{notice.date}</span>
-                    </div>
-                    <p className="text-sm font-bold">{notice.title}</p>
-                    {index < announcements.length - 1 && (
-                      <div className="mt-4 h-px bg-white/10" />
-                    )}
+                <div className="relative z-10 space-y-8">
+                  <div className="flex items-center gap-2">
+                    <span className={iconClass("text-xl")}>campaign</span>
+                    <h2 className="text-lg font-bold">공지사항</h2>
                   </div>
-                ))}
-              </div>
-            </article>
+                  {announcements.map((notice, index) => (
+                    <div key={notice.title}>
+                      <div className="mb-2 flex items-center justify-between text-[10px] uppercase">
+                        <span className="rounded bg-white/20 px-2 py-0.5 font-bold">
+                          {notice.tag}
+                        </span>
+                        <span className="opacity-70">{notice.date}</span>
+                      </div>
+                      <p className="text-sm font-bold">{notice.title}</p>
+                      {index < announcements.length - 1 && (
+                        <div className="mt-4 h-px bg-white/10" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </article>
+            </Link>
 
             <article className="rounded-2xl border border-slate-100 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-[#1a2632]">
               <div className="mb-6 flex items-center justify-between">
                 <h2 className="text-lg font-bold">다가오는 수업</h2>
-                <button className="text-xs font-bold text-primary hover:underline">
+                <Link
+                  href="/student-classes"
+                  className="text-xs font-bold text-primary hover:underline"
+                >
                   전체 시간표
-                </button>
+                </Link>
               </div>
               <div className="space-y-4">
                 {upcomingClasses.map((session) => (
@@ -500,28 +464,10 @@ export function StudentDashboardOverview() {
           </div>
         </section>
       </main>
-      {isEnrollmentOpen ? (
-        <CourseEnrollmentModal
-          classes={filteredClasses}
-          subjects={uniqueSubjects}
-          subjectFilter={subjectFilter}
-          onSubjectChange={setSubjectFilter}
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          selectedClassId={selectedClassId}
-          onSelectClass={setSelectedClassId}
-          onClose={() => setEnrollmentOpen(false)}
-          onConfirm={() => setConfirmOpen(true)}
-        />
-      ) : null}
-      {isConfirmOpen ? (
-        <EnrollmentConfirmModal
-          selectedClass={selectedClass}
-          onClose={() => setConfirmOpen(false)}
-          onConfirm={() => {
-            setConfirmOpen(false);
-            setEnrollmentOpen(false);
-          }}
+      {isRetestListOpen ? (
+        <RetestListModal
+          schedules={allRetestSchedules}
+          onClose={() => setRetestListOpen(false)}
         />
       ) : null}
     </div>

@@ -57,7 +57,7 @@ export function StudentInquiryCreatePage() {
               className="text-[#617589] dark:text-[#a1b0c0] text-sm font-medium hover:text-primary"
               onClick={() => router.push("/student-inquiries")}
             >
-              문의 관리
+              소통
             </button>
             <span className="text-[#617589] dark:text-[#a1b0c0] text-sm material-symbols-outlined">
               chevron_right

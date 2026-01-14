@@ -8,7 +8,7 @@ import type {
   DashboardSummaryCard,
   DashboardTaskRow,
   InquiryRow,
-  RetestRequest,
+  RetestScheduleItem,
   TodayClassSession,
 } from "@/features/dashboard/types";
 
@@ -19,6 +19,7 @@ const definedScores = studentEntities
 const averageScore = definedScores.length
   ? definedScores.reduce((sum, score) => sum + score, 0) / definedScores.length
   : 0;
+const averageScoreLabel = `${averageScore.toFixed(1)}점`;
 
 const totalStudents = studentEntities.length;
 const pausedStudents = studentEntities.filter(
@@ -28,15 +29,6 @@ const activeClasses = classEntities.length;
 const activeExams = examDefinitions.length;
 
 export const dashboardSummaryCards: DashboardSummaryCard[] = [
-  {
-    title: "평균 성적",
-    value: `${averageScore.toFixed(1)}점`,
-    delta: "+1.2점",
-    deltaVariant: "positive",
-    icon: "insights",
-    iconClassName:
-      "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-200",
-  },
   {
     title: "재원 학생",
     value: `${totalStudents}명`,
@@ -56,13 +48,20 @@ export const dashboardSummaryCards: DashboardSummaryCard[] = [
       "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-200",
   },
   {
-    title: "진행 중 시험",
-    value: `${activeExams}건`,
-    delta: "모니터링 필요",
-    deltaVariant: "negative",
-    icon: "assignment",
+    title: "현재 시험 목록",
+    value: `${activeExams}개`,
+    delta: "시험지 목록",
+    deltaVariant: "positive",
+    icon: "description",
     iconClassName:
-      "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-200",
+      "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-200",
+  },
+  {
+    title: "평균 점수",
+    value: averageScoreLabel,
+    icon: "leaderboard",
+    iconClassName:
+      "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-200",
   },
 ];
 
@@ -107,15 +106,15 @@ export const dashboardInquiryRows: InquiryRow[] = studentEntities
 const taskIcons = ["contact_phone", "rule", "upload_file"] as const;
 const taskStatuses: Array<DashboardTaskRow["status"]> = [
   "진행 중",
-  "대기",
   "완료",
+  "진행 중",
 ];
 const taskVariants: Array<DashboardTaskRow["statusVariant"]> = [
   "primary",
-  "neutral",
   "success",
+  "primary",
 ];
-const taskProgress = [65, 30, 100];
+const taskProgress = [65, 100, 70];
 const taskPriorities: Array<DashboardTaskRow["priority"]> = [
   "높음",
   "보통",
@@ -127,7 +126,7 @@ export const dashboardTaskRows: DashboardTaskRow[] = assistantEntities
   .map((assistant, index) => {
     const klass = classEntities[index % classEntities.length];
     const exam = examDefinitions[index % examDefinitions.length];
-    const dueLabels = ["오늘", "D-1", "완료"];
+    const dueLabels = ["", "", ""];
 
     return {
       title: `${klass.name} 업무 점검`,
@@ -214,25 +213,19 @@ export const clinicStudents: ClinicStudent[] = studentEntities
     };
   });
 
-const remedialCandidates = studentEntities
-  .filter((student) => (student.averageScore ?? 90) < 90)
-  .slice(0, 3);
-
-export const retestRequests: RetestRequest[] = remedialCandidates.map(
-  (student) => {
-    const klass = classEntities.find((item) => item.id === student.classId);
-    const exam =
-      examDefinitions.find((item) => item.classId === student.classId) ??
-      examDefinitions[0];
-    const gradeLabel = klass?.level ?? "고등학생";
-    const reason = `${exam.title} 재응시 일정 조율 요청 (최근 점수 ${
-      student.averageScore ?? "-"
-    }점)`;
-
-    return {
-      name: student.name,
-      grade: gradeLabel,
-      reason,
-    };
-  }
-);
+export const retestScheduleItems: RetestScheduleItem[] = [
+  {
+    id: "retest-jan-13",
+    dateLabel: "1월 13일",
+    groupLabel: "A반",
+    title: "영어 듣기 평가",
+    count: 30,
+  },
+  {
+    id: "retest-jan-18",
+    dateLabel: "1월 18일",
+    groupLabel: "B반",
+    title: "단어 테스트",
+    count: 10,
+  },
+];

@@ -57,6 +57,20 @@ export function ExamInfoSection({
           value={form.targetClass}
           onChange={(value) => onChange("targetClass", value)}
         />
+        <InputField
+          id="exam-type"
+          label="시험지 유형"
+          value={form.examType}
+          placeholder="예: 모의고사, 단원 평가"
+          onChange={(value) => onChange("examType", value)}
+        />
+        <InputField
+          id="exam-source"
+          label="출처"
+          value={form.source}
+          placeholder="예: 자체 제작, 기출"
+          onChange={(value) => onChange("source", value)}
+        />
         <DateField
           label="시험일"
           value={form.examDate}
@@ -95,9 +109,9 @@ export function QuestionSetupSection({
   totalScore,
   onQuestionCountChange,
 }: {
-  totalQuestions: number;
+  totalQuestions: string;
   totalScore: number;
-  onQuestionCountChange: (value: number) => void;
+  onQuestionCountChange: (value: string) => void;
 }) {
   return (
     <section className="overflow-hidden rounded-xl border border-primary/20 bg-[var(--surface-background)] shadow-lg shadow-primary/5 ring-1 ring-primary/10 dark:bg-[var(--surface-background)]">
@@ -199,12 +213,20 @@ export function SummarySection({
 
 export function StickyActions({
   onSubmit,
+  onUpdate,
   submitting,
+  updateDisabled,
   message,
+  submitLabel = "등록 및 성적 연동",
+  submitDisabled,
 }: {
   onSubmit: () => void;
+  onUpdate?: () => void;
   submitting: boolean;
+  updateDisabled?: boolean;
   message: BannerState;
+  submitLabel?: string;
+  submitDisabled?: boolean;
 }) {
   return (
     <>
@@ -214,18 +236,27 @@ export function StickyActions({
             <span className={iconClass("text-green-500 text-lg")}>
               check_circle
             </span>
-            {message
-              ? message.text
-              : "작성 중 변경사항이 자동으로 임시 저장됩니다."}
+            {message ? message.text : ""}
           </div>
           <div className="ml-auto flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+            {onUpdate ? (
+              <button
+                type="button"
+                onClick={onUpdate}
+                disabled={updateDisabled || submitting}
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 sm:flex-none"
+              >
+                수정하기
+                <span className={iconClass("text-lg")}>edit</span>
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={onSubmit}
-              disabled={submitting}
+              disabled={submitting || submitDisabled}
               className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-blue-500/30 transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-70 sm:flex-none"
             >
-              {submitting ? "등록 중..." : "등록 및 성적 연동"}
+              {submitting ? "등록 중..." : submitLabel}
               <span className={iconClass("text-lg")}>send</span>
             </button>
           </div>
@@ -275,13 +306,15 @@ function QuestionCard({
             <div className="relative w-20">
               <input
                 type="number"
-                min={1}
+                min={0}
                 value={question.points}
-                onChange={(event) =>
+                onChange={(event) => {
+                  const raw = event.target.value;
+                  const next = raw == "" ? 0 : Number(raw);
                   onChange(question.id, {
-                    points: Number(event.target.value) || 1,
-                  })
-                }
+                    points: Number.isFinite(next) ? next : 0,
+                  });
+                }}
                 className="w-full rounded-md border-slate-300 bg-white py-1.5 pl-3 pr-8 text-right font-bold text-slate-900 focus:border-primary focus:ring-primary dark:border-slate-600 dark:bg-slate-700 dark:text-white"
               />
               <span className="pointer-events-none absolute right-2 top-1.5 text-xs text-slate-400">
@@ -315,6 +348,36 @@ function QuestionCard({
         </div>
       </div>
       <div className="space-y-6 p-6">
+        <div className="grid gap-4 md:grid-cols-2">
+          <label className="flex flex-col gap-2 text-sm text-slate-700 dark:text-slate-300">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              유형
+            </span>
+            <input
+              type="text"
+              value={question.category}
+              onChange={(event) =>
+                onChange(question.id, { category: event.target.value })
+              }
+              placeholder="예: 제목, 빈칸, 요약"
+              className="w-full rounded-lg border-slate-300 bg-slate-50 text-sm text-slate-900 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-600 dark:bg-slate-700/30 dark:text-white"
+            />
+          </label>
+          <label className="flex flex-col gap-2 text-sm text-slate-700 dark:text-slate-300">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              출처
+            </span>
+            <input
+              type="text"
+              value={question.source}
+              onChange={(event) =>
+                onChange(question.id, { source: event.target.value })
+              }
+              placeholder="예: 2025 3월 모의고사"
+              className="w-full rounded-lg border-slate-300 bg-slate-50 text-sm text-slate-900 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-600 dark:bg-slate-700/30 dark:text-white"
+            />
+          </label>
+        </div>
         <div className="space-y-2">
           <label className="flex justify-between text-sm font-bold text-slate-700 dark:text-slate-300">
             <span>문제 내용 (선택사항)</span>
@@ -417,8 +480,8 @@ function QuestionCountInput({
   totalQuestions,
   onChange,
 }: {
-  totalQuestions: number;
-  onChange: (value: number) => void;
+  totalQuestions: string;
+  onChange: (value: string) => void;
 }) {
   return (
     <div className="w-full flex-1 space-y-3 md:max-w-xs">
@@ -432,10 +495,10 @@ function QuestionCountInput({
         <input
           id="total-questions"
           type="number"
-          min={1}
+          min={0}
           max={100}
           value={totalQuestions}
-          onChange={(event) => onChange(Number(event.target.value))}
+          onChange={(event) => onChange(event.target.value)}
           className="w-full rounded-xl border-2 border-slate-300 bg-white py-4 text-center text-4xl font-black text-slate-900 shadow-sm transition group-hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/10 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
         />
         <span className="pointer-events-none absolute right-4 bottom-5 text-lg font-medium text-slate-400">
@@ -443,7 +506,7 @@ function QuestionCountInput({
         </span>
       </div>
       <p className="text-center text-xs text-slate-500">
-        문항 수를 조정하면 아래 리스트가 자동 생성됩니다.
+        문항 수 입력 시 100점 기준으로 자동 배점됩니다.
       </p>
     </div>
   );
@@ -471,9 +534,39 @@ function TotalScoreDisplay({ totalScore }: { totalScore: number }) {
         </span>
       </div>
       <p className="text-center text-xs text-slate-500">
-        문항 배점 합계가 자동으로 계산됩니다.
+        만점 100점 기준입니다. 문항 배점을 입력해 합계를 맞춰주세요.
       </p>
     </div>
+  );
+}
+
+function InputField({
+  id,
+  label,
+  value,
+  placeholder,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  placeholder?: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="flex flex-col gap-2 text-sm text-slate-700 dark:text-slate-300">
+      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+        {label}
+      </span>
+      <input
+        id={id}
+        type="text"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        className="w-full rounded-lg border-slate-300 bg-white text-slate-900 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+      />
+    </label>
   );
 }
 

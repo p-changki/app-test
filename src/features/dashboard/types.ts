@@ -165,8 +165,10 @@ export type ClinicScheduleSummary = {
   busiestRangeLabel: string;
 };
 
-export type RetestRequest = {
-  name: string;
-  grade: string;
-  reason: string;
+export type RetestScheduleItem = {
+  id: string;
+  dateLabel: string;
+  groupLabel: string;
+  title: string;
+  count: number;
 };

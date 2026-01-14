@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import type { ExamStatCard } from "@/types/exams";
 import { iconClass } from "@/lib/icon-class";
 import { cn } from "@/lib/utils";
@@ -9,7 +11,7 @@ type StatsGridProps = {
 
 export function StatsGrid({ stats }: StatsGridProps) {
   return (
-    <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-2">
       {stats.map((stat) => (
         <StatsCard key={stat.title} stat={stat} />
       ))}
@@ -60,8 +62,8 @@ function StatsCard({ stat }: { stat: ExamStatCard }) {
     );
   }
 
-  return (
-    <div className="flex flex-col justify-between rounded-xl border border-slate-200 bg-[var(--surface-background)] p-6 shadow-sm dark:border-slate-700 dark:bg-[var(--surface-background)]">
+  const content = (
+    <div className="flex flex-col justify-between rounded-xl border border-slate-200 bg-[var(--surface-background)] p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg dark:border-slate-700 dark:bg-[var(--surface-background)]">
       <div>
         <div className="mb-2 flex items-center justify-between">
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
@@ -76,7 +78,7 @@ function StatsCard({ stat }: { stat: ExamStatCard }) {
         <p
           className={cn(
             "text-3xl font-bold",
-            stat.title === "평균 점수" ? lexend.className : undefined
+            stat.title === "총 시험 등록" ? lexend.className : undefined
           )}
         >
           {stat.value}
@@ -87,4 +89,14 @@ function StatsCard({ stat }: { stat: ExamStatCard }) {
       </div>
     </div>
   );
+
+  if (stat.href) {
+    return (
+      <Link href={stat.href} className="block focus:outline-none">
+        {content}
+      </Link>
+    );
+  }
+
+  return content;
 }

@@ -154,6 +154,7 @@ function mapStudentEntityToRecord(student: StudentEntity): StudentRecord {
     name: student.name,
     studentId: student.studentId,
     classId: student.classId,
+    registeredAt: student.registeredAt,
     avatarUrl: student.avatarUrl,
     initials: student.initials ?? deriveInitials(student.name),
     className,
@@ -161,6 +162,7 @@ function mapStudentEntityToRecord(student: StudentEntity): StudentRecord {
       ? "dashed"
       : (getStudentClassColor(subject) ?? "neutral"),
     school: buildSchoolLabel(student),
+    grade: student.gradeLabel,
     contact: student.phone ?? student.contacts?.[0]?.value ?? "연락처 미등록",
     attendance: student.attendance,
     attendanceVariant,

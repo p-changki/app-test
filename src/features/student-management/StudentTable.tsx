@@ -1,6 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo, useState } from "react";
+import {
+  createColumnHelper,
+  getCoreRowModel,
+  getSortedRowModel,
+  useReactTable,
+  type SortingState,
+} from "@tanstack/react-table";
 
 import type {
   PaginationItem,
@@ -63,6 +71,8 @@ const statusVariantMap: Record<
   퇴원: "neutral",
 };
 
+const columnHelper = createColumnHelper<StudentRecord>();
+
 type StudentTableProps = {
   students: StudentRecord[];
   tableSummary: StudentTableSummary;
@@ -84,8 +94,75 @@ export function StudentTable({
   studentStatuses,
   onStatusChange,
 }: StudentTableProps) {
+  const columns = useMemo(
+    () => [
+      columnHelper.accessor((row) => row.name, {
+        id: "name",
+        header: "학생 정보",
+      }),
+      columnHelper.accessor((row) => row.className, {
+        id: "className",
+        header: "현재 배정 반",
+      }),
+      columnHelper.accessor((row) => row.school, {
+        id: "school",
+        header: "학교/학년",
+      }),
+      columnHelper.accessor((row) => row.contact, {
+        id: "contact",
+        header: "연락처",
+      }),
+      columnHelper.accessor((row) => row.registeredAt ?? "", {
+        id: "registeredAt",
+        header: "등록일",
+      }),
+      columnHelper.accessor((row) => row.attendance ?? -1, {
+        id: "attendance",
+        header: "출결",
+      }),
+      columnHelper.accessor((row) => row.status.label, {
+        id: "status",
+        header: "상태",
+      }),
+    ],
+    []
+  );
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [attendanceModal, setAttendanceModal] = useState<{
+    studentId: string;
+    studentName: string;
+  } | null>(null);
+  const table = useReactTable({
+    data: students,
+    columns,
+    state: { sorting },
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  });
+  const sortedRows = table.getRowModel().rows;
+  const nameColumn = table.getColumn("name");
+  const attendanceColumn = table.getColumn("attendance");
+  const statusColumn = table.getColumn("status");
   const allSelected =
     students.length > 0 && selectedStudentIds.length === students.length;
+  type SortColumn = ReturnType<typeof table.getColumn>;
+  const renderSortIcon = (column: SortColumn) => {
+    if (!column) return null;
+    const state = column.getIsSorted();
+    const icon =
+      state === "asc" ? "north" : state === "desc" ? "south" : "unfold_more";
+    return (
+      <span
+        className={cn(
+          iconClass("text-[16px]"),
+          state ? "text-slate-600 dark:text-slate-200" : "text-slate-400"
+        )}
+      >
+        {icon}
+      </span>
+    );
+  };
 
   return (
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-[var(--surface-background)] shadow-sm transition-colors dark:border-slate-800 dark:bg-[var(--surface-background)]">
@@ -103,52 +180,98 @@ export function StudentTable({
                     onChange={onToggleAll}
                   />
                 </th>
-                <th className="p-4">학생 정보</th>
+                <th className="p-4">
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1.5 hover:text-slate-700 dark:hover:text-slate-200"
+                    onClick={nameColumn?.getToggleSortingHandler()}
+                  >
+                    학생 정보
+                    {renderSortIcon(nameColumn)}
+                  </button>
+                </th>
                 <th className="p-4">현재 배정 반</th>
                 <th className="p-4">학교/학년</th>
                 <th className="p-4">연락처</th>
-                <th className="p-4">성적/출결</th>
-                <th className="p-4">상태</th>
+                <th className="p-4">등록일</th>
+                <th className="p-4">
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1.5 hover:text-slate-700 dark:hover:text-slate-200"
+                    onClick={attendanceColumn?.getToggleSortingHandler()}
+                  >
+                    출결
+                    {renderSortIcon(attendanceColumn)}
+                  </button>
+                </th>
+                <th className="p-4">
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1.5 hover:text-slate-700 dark:hover:text-slate-200"
+                    onClick={statusColumn?.getToggleSortingHandler()}
+                  >
+                    상태
+                    {renderSortIcon(statusColumn)}
+                  </button>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-              {students.map((student) => (
-                <StudentRow
-                  key={student.id}
-                  student={student}
-                  selected={selectedStudentIds.includes(student.id)}
-                  onToggle={() => onToggleStudent(student.id)}
-                  currentStatus={
-                    studentStatuses[student.id] ??
-                    (["재원중", "휴원", "퇴원"].includes(student.status.label)
-                      ? (student.status.label as StudentStatusOption)
-                      : "재원중")
-                  }
-                  onStatusChange={(status) =>
-                    onStatusChange(student.id, status)
-                  }
-                />
-              ))}
+              {sortedRows.map((row) => {
+                const student = row.original;
+                return (
+                  <StudentRow
+                    key={student.id}
+                    student={student}
+                    selected={selectedStudentIds.includes(student.id)}
+                    onToggle={() => onToggleStudent(student.id)}
+                    onOpenAttendance={() =>
+                      setAttendanceModal({
+                        studentId: student.id,
+                        studentName: student.name,
+                      })
+                    }
+                    currentStatus={
+                      studentStatuses[student.id] ??
+                      (["재원중", "휴원", "퇴원"].includes(student.status.label)
+                        ? (student.status.label as StudentStatusOption)
+                        : "재원중")
+                    }
+                    onStatusChange={(status) =>
+                      onStatusChange(student.id, status)
+                    }
+                  />
+                );
+              })}
             </tbody>
           </table>
         </div>
       </div>
       <div className="space-y-3 border-t border-slate-200 px-4 py-4 dark:border-slate-800 md:hidden">
-        {students.map((student) => (
-          <MobileStudentCard
-            key={`${student.id}-mobile`}
-            student={student}
-            selected={selectedStudentIds.includes(student.id)}
-            onToggle={() => onToggleStudent(student.id)}
-            currentStatus={
-              studentStatuses[student.id] ??
-              (["재원중", "휴원", "퇴원"].includes(student.status.label)
-                ? (student.status.label as StudentStatusOption)
-                : "재원중")
-            }
-            onStatusChange={(status) => onStatusChange(student.id, status)}
-          />
-        ))}
+        {sortedRows.map((row) => {
+          const student = row.original;
+          return (
+            <MobileStudentCard
+              key={`${student.id}-mobile`}
+              student={student}
+              selected={selectedStudentIds.includes(student.id)}
+              onToggle={() => onToggleStudent(student.id)}
+              onOpenAttendance={() =>
+                setAttendanceModal({
+                  studentId: student.id,
+                  studentName: student.name,
+                })
+              }
+              currentStatus={
+                studentStatuses[student.id] ??
+                (["재원중", "휴원", "퇴원"].includes(student.status.label)
+                  ? (student.status.label as StudentStatusOption)
+                  : "재원중")
+              }
+              onStatusChange={(status) => onStatusChange(student.id, status)}
+            />
+          );
+        })}
       </div>
       <div className="flex flex-col gap-3 border-t border-slate-200 p-4 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400 md:flex-row md:items-center md:justify-between">
         <p>
@@ -199,6 +322,13 @@ export function StudentTable({
           </button>
         </div>
       </div>
+      {attendanceModal ? (
+        <AttendanceRegisterModal
+          studentName={attendanceModal.studentName}
+          onClose={() => setAttendanceModal(null)}
+          onSave={() => setAttendanceModal(null)}
+        />
+      ) : null}
     </section>
   );
 }
@@ -207,17 +337,22 @@ function StudentRow({
   student,
   selected,
   onToggle,
+  onOpenAttendance,
   currentStatus,
   onStatusChange,
 }: {
   student: StudentRecord;
   selected: boolean;
   onToggle: () => void;
+  onOpenAttendance: () => void;
   currentStatus: StudentStatusOption;
   onStatusChange: (status: StudentStatusOption) => void;
 }) {
   const badgeStyle = classBadgeStyles[student.classColor];
   const statusVariant = statusVariantMap[currentStatus];
+  const attendanceTone = student.attendanceVariant
+    ? attendanceClasses[student.attendanceVariant]
+    : "text-slate-600 dark:text-slate-300";
 
   return (
     <tr
@@ -253,16 +388,21 @@ function StudentRow({
             </div>
           )}
           <div className="flex flex-col">
-            <p className="text-slate-900 transition hover:text-primary dark:text-white">
-              {student.name}
+            <p className="flex flex-wrap items-center gap-2 text-slate-900 transition hover:text-primary dark:text-white">
+              <span>{student.name}</span>
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                  statusVariantClasses[statusVariant]
+                )}
+              >
+                {currentStatus}
+              </span>
               {student.highlight && (
-                <span className="ml-2 rounded border border-rose-200 bg-rose-50 px-1 text-[10px] font-semibold text-rose-500 dark:border-rose-500/40 dark:bg-rose-900/20 dark:text-rose-300">
+                <span className="rounded border border-rose-200 bg-rose-50 px-1 text-[10px] font-semibold text-rose-500 dark:border-rose-500/40 dark:bg-rose-900/20 dark:text-rose-300">
                   {student.highlight.label}
                 </span>
               )}
-            </p>
-            <p className="font-mono text-xs text-slate-500 dark:text-slate-400">
-              {student.studentId}
             </p>
           </div>
         </Link>
@@ -288,38 +428,20 @@ function StudentRow({
       <td className="p-4 text-slate-600 dark:text-slate-400">
         {student.contact}
       </td>
-      <td className="p-4">
-        {student.emptyPerformance ? (
-          <span className="text-xs italic text-slate-400">
-            {student.emptyPerformance}
-          </span>
-        ) : (
-          <div className="flex flex-col gap-1 text-xs">
-            <div className="flex items-center gap-2">
-              <span className="w-8 text-slate-500">출석</span>
-              <span
-                className={cn(
-                  "font-semibold",
-                  student.attendanceVariant
-                    ? attendanceClasses[student.attendanceVariant]
-                    : "text-slate-700 dark:text-slate-300"
-                )}
-              >
-                {student.attendance}%
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-8 text-slate-500">평균</span>
-              <span className="font-semibold text-slate-700 dark:text-slate-300">
-                {student.averageScore}점
-              </span>
-            </div>
-          </div>
-        )}
+      <td className="p-4 text-slate-600 dark:text-slate-400">
+        {student.registeredAt ?? "-"}
+      </td>
+      <td className={cn("p-4 text-sm", attendanceTone)}>
+        <button
+          type="button"
+          className="inline-flex items-center gap-1 hover:underline"
+          onClick={onOpenAttendance}
+        >
+          출석 {student.attendance ?? "-"}%
+        </button>
       </td>
       <td className="p-4">
         <label className="flex flex-col gap-1 text-xs text-slate-400">
-          <span>상태</span>
           <select
             className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-primary focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
             value={currentStatus}
@@ -334,14 +456,6 @@ function StudentRow({
             ))}
           </select>
         </label>
-        <span
-          className={cn(
-            "mt-2 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium",
-            statusVariantClasses[statusVariant]
-          )}
-        >
-          {currentStatus}
-        </span>
       </td>
     </tr>
   );
@@ -351,17 +465,22 @@ function MobileStudentCard({
   student,
   selected,
   onToggle,
+  onOpenAttendance,
   currentStatus,
   onStatusChange,
 }: {
   student: StudentRecord;
   selected: boolean;
   onToggle: () => void;
+  onOpenAttendance: () => void;
   currentStatus: StudentStatusOption;
   onStatusChange: (status: StudentStatusOption) => void;
 }) {
   const badgeStyle = classBadgeStyles[student.classColor];
   const statusVariant = statusVariantMap[currentStatus];
+  const attendanceTone = student.attendanceVariant
+    ? attendanceClasses[student.attendanceVariant]
+    : "text-slate-600 dark:text-slate-300";
 
   return (
     <div
@@ -387,12 +506,17 @@ function MobileStudentCard({
               {student.initials}
             </div>
           )}
-          <div className="flex flex-col">
-            <p className="text-base font-semibold text-slate-900 dark:text-white">
-              {student.name}
-            </p>
-            <p className="font-mono text-xs text-slate-500">
-              {student.studentId}
+          <div className="flex flex-col gap-1">
+            <p className="flex flex-wrap items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+              <span>{student.name}</span>
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                  statusVariantClasses[statusVariant]
+                )}
+              >
+                {currentStatus}
+              </span>
             </p>
           </div>
         </Link>
@@ -422,39 +546,19 @@ function MobileStudentCard({
         </span>
         <span>{student.school}</span>
         <span>{student.contact}</span>
+        <span>등록일 {student.registeredAt ?? "-"}</span>
       </div>
-      <div className="mt-3 flex flex-wrap gap-4 text-xs">
-        {student.emptyPerformance ? (
-          <span className="italic text-slate-400">
-            {student.emptyPerformance}
-          </span>
-        ) : (
-          <>
-            <div className="flex items-center gap-2">
-              <span className="text-slate-500">출석</span>
-              <span
-                className={cn(
-                  "font-semibold",
-                  student.attendanceVariant
-                    ? attendanceClasses[student.attendanceVariant]
-                    : "text-slate-700 dark:text-slate-200"
-                )}
-              >
-                {student.attendance}%
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-slate-500">평균</span>
-              <span className="font-semibold text-slate-700 dark:text-slate-200">
-                {student.averageScore}점
-              </span>
-            </div>
-          </>
-        )}
+      <div className={cn("mt-3 text-xs font-medium", attendanceTone)}>
+        <button
+          type="button"
+          className="inline-flex items-center gap-1 hover:underline"
+          onClick={onOpenAttendance}
+        >
+          출석 {student.attendance ?? "-"}%
+        </button>
       </div>
       <div className="mt-4 flex flex-col gap-2 text-xs text-slate-500">
         <label className="flex flex-col gap-1 text-xs text-slate-400">
-          <span>상태</span>
           <select
             className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-primary focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
             value={currentStatus}
@@ -469,14 +573,99 @@ function MobileStudentCard({
             ))}
           </select>
         </label>
-        <span
-          className={cn(
-            "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold",
-            statusVariantClasses[statusVariant]
-          )}
+      </div>
+    </div>
+  );
+}
+
+function AttendanceRegisterModal({
+  studentName,
+  onClose,
+  onSave,
+}: {
+  studentName: string;
+  onClose: () => void;
+  onSave: () => void;
+}) {
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [status, setStatus] = useState("출석");
+  const [note, setNote] = useState("");
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6">
+      <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-800 dark:bg-[#1a2632]">
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-[color:var(--surface-text)]">
+              출결 등록
+            </h3>
+            <p className="text-sm text-[color:var(--surface-text-muted)]">
+              {studentName} 학생의 수업 출결을 기록하세요.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="rounded-full p-2 text-[color:var(--surface-text-muted)] transition hover:bg-[color:var(--surface-border)]/30"
+            aria-label="모달 닫기"
+            onClick={onClose}
+          >
+            <span className={iconClass("text-xl")}>close</span>
+          </button>
+        </div>
+        <form
+          className="space-y-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            onSave();
+          }}
         >
-          {currentStatus}
-        </span>
+          <label className="block text-sm font-medium text-[color:var(--surface-text)]">
+            수업 일자
+            <input
+              type="date"
+              value={date}
+              onChange={(event) => setDate(event.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-[color:var(--surface-text)] outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-[#111418]"
+            />
+          </label>
+          <label className="block text-sm font-medium text-[color:var(--surface-text)]">
+            출결 상태
+            <select
+              value={status}
+              onChange={(event) => setStatus(event.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-[color:var(--surface-text)] outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-[#111418]"
+            >
+              <option value="출석">출석</option>
+              <option value="지각">지각</option>
+              <option value="결석">결석</option>
+              <option value="조퇴">조퇴</option>
+            </select>
+          </label>
+          <label className="block text-sm font-medium text-[color:var(--surface-text)]">
+            메모
+            <textarea
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+              placeholder="특이사항을 입력하세요."
+              className="mt-1 min-h-[100px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-[color:var(--surface-text)] outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-[#111418]"
+            />
+          </label>
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-[color:var(--surface-text)] transition hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+            >
+              취소
+            </button>
+            <button
+              type="submit"
+              className="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-600"
+            >
+              등록
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

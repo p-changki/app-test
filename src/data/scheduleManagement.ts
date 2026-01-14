@@ -3,7 +3,6 @@ import type {
   CalendarDay,
   CalendarEvent,
   FilterOption,
-  MiniCalendarDay,
   UpcomingSchedule,
 } from "@/features/schedule-management/overview/types";
 
@@ -45,118 +44,82 @@ const baseCalendarDays: CalendarDay[] = [
   { date: 2, month: "next", weekday: 6 },
 ];
 
-const weekdayMap: Record<string, number> = {
-  일: 0,
-  월: 1,
-  화: 2,
-  수: 3,
-  목: 4,
-  금: 5,
-  토: 6,
-};
+const scheduleMockEvents: Array<{
+  id: string;
+  title: string;
+  date: string;
+  time: string;
+  location: string;
+  content: string;
+  variant: CalendarEvent["variant"];
+}> = [
+  {
+    id: "schedule-001",
+    title: "영어 듣기 클리닉",
+    date: "2023-10-08",
+    time: "18:00",
+    location: "2관 304호",
+    content: "재시험 대비 듣기 유형 집중 보강",
+    variant: "assignment",
+  },
+  {
+    id: "schedule-002",
+    title: "중간고사 모의시험",
+    date: "2023-10-12",
+    time: "19:30",
+    location: "본관 2층",
+    content: "범위: 교재 3-4과 + 워크북",
+    variant: "exam",
+  },
+  {
+    id: "schedule-003",
+    title: "학부모 상담",
+    date: "2023-10-18",
+    time: "14:00",
+    location: "상담실 1",
+    content: "최근 성적 추이 및 학습 계획 공유",
+    variant: "counsel",
+  },
+  {
+    id: "schedule-004",
+    title: "클리닉 보충 수업",
+    date: "2023-10-24",
+    time: "17:00",
+    location: "2관 201호",
+    content: "오답 유형별 미니 테스트 포함",
+    variant: "assignment",
+  },
+];
 
-type DerivedEvent = CalendarEvent & { targetWeekday?: number };
-
-const derivedEvents: DerivedEvent[] = classEntities.flatMap((klass) => {
-  const startLabel = klass.schedule.time.split("-")[0].trim();
-  const classEvents = klass.schedule.days.map<DerivedEvent>((dayLabel) => ({
-    label: `${startLabel} ${klass.name}`,
-    variant: "class",
-    targetWeekday: weekdayMap[dayLabel] ?? undefined,
-  }));
-
-  const assessmentEvent: DerivedEvent | null = klass.nextAssessment
-    ? {
-        label: `${klass.nextAssessment.title}`,
-        variant: klass.nextAssessment.type.includes("과제")
-          ? "assignment"
-          : "exam",
-      }
-    : null;
-
-  return assessmentEvent ? [...classEvents, assessmentEvent] : classEvents;
-});
-
-const weekdayQueues = new Map<number, DerivedEvent[]>();
-const floatingQueue: DerivedEvent[] = [];
-
-derivedEvents.forEach((event) => {
-  if (
-    typeof event.targetWeekday === "number" &&
-    !Number.isNaN(event.targetWeekday)
-  ) {
-    const queue = weekdayQueues.get(event.targetWeekday) ?? [];
-    queue.push(event);
-    weekdayQueues.set(event.targetWeekday, queue);
-  } else {
-    floatingQueue.push(event);
-  }
-});
-
-const pickEventsForDay = (weekday: number): CalendarEvent[] => {
-  const queue = weekdayQueues.get(weekday);
-  if (queue && queue.length > 0) {
-    return queue.splice(0, 2).map(stripWeekdayField);
-  }
-  if (floatingQueue.length > 0) {
-    return floatingQueue.splice(0, 1).map(stripWeekdayField);
-  }
-  return [];
-};
+const scheduleEventMap = scheduleMockEvents.reduce((acc, event) => {
+  const day = Number(event.date.split("-")[2]);
+  const events = acc.get(day) ?? [];
+  events.push({
+    id: event.id,
+    label: `${event.time} ${event.title} (${event.location})`,
+    variant: event.variant,
+    title: event.title,
+    date: event.date,
+    time: event.time,
+    location: event.location,
+    content: event.content,
+  });
+  acc.set(day, events);
+  return acc;
+}, new Map<number, CalendarEvent[]>());
 
 export const calendarDays: CalendarDay[] = baseCalendarDays.map((day) => {
   if (day.month !== "current") {
     return day;
   }
-  const events = pickEventsForDay(day.weekday);
-  return events.length > 0 ? { ...day, events } : day;
+  const events = scheduleEventMap.get(day.date);
+  return events && events.length > 0 ? { ...day, events } : day;
 });
 
-const stateFromDay = (day: CalendarDay): MiniCalendarDay["state"] => {
-  if (day.month !== "current") {
-    return "muted";
-  }
-  if (day.isToday) {
-    return "today";
-  }
-  if (day.weekday === 5) {
-    return "saturday";
-  }
-  if (day.weekday === 6) {
-    return "sunday";
-  }
-  return undefined;
-};
-
-const dotFromEvents = (events?: CalendarEvent[]): MiniCalendarDay["dot"] => {
-  if (!events || events.length === 0) {
-    return undefined;
-  }
-  if (events.some((event) => event.variant === "exam")) {
-    return "exam";
-  }
-  if (events.some((event) => event.variant === "assignment")) {
-    return "assignment";
-  }
-  if (events.some((event) => event.variant === "counsel")) {
-    return "counsel";
-  }
-  return undefined;
-};
-
-export const miniCalendarDays: MiniCalendarDay[] = calendarDays
-  .slice(0, 14)
-  .map((day) => ({
-    label: `${day.date}`,
-    state: stateFromDay(day),
-    dot: dotFromEvents(day.events),
-  }));
-
 export const filterOptions: FilterOption[] = [
-  { label: "수업", color: "bg-blue-500" },
   { label: "시험", color: "bg-rose-500" },
-  { label: "과제", color: "bg-emerald-500" },
-  { label: "상담", color: "bg-amber-500" },
+  { label: "클리닉", color: "bg-emerald-500" },
+  { label: "기타", color: "bg-amber-500" },
 ];
 
 const formatDateParts = (isoDate: string | undefined) => {
@@ -169,12 +132,6 @@ const formatDateParts = (isoDate: string | undefined) => {
     dateLabel: `${Number(day)}`,
   };
 };
-
-function stripWeekdayField(event: DerivedEvent): CalendarEvent {
-  const rest = { ...event };
-  delete (rest as { targetWeekday?: number }).targetWeekday;
-  return rest;
-}
 
 export const upcomingSchedules: UpcomingSchedule[] = classEntities
   .slice(0, 2)

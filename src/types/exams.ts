@@ -15,6 +15,7 @@ export type ExamStatCard = {
   icon?: string;
   accentClass?: string;
   variant?: "critical";
+  href?: string;
 };
 
 export type FlaggedAssignmentActionVariant = "primary" | "secondary" | "ghost";
@@ -46,6 +47,7 @@ export type AssignmentPrimaryActionVariant = "primary" | "muted";
 export type AssignmentPrimaryAction = {
   label: string;
   variant: AssignmentPrimaryActionVariant;
+  href?: string;
 };
 
 export type AssignmentRow = {

@@ -3,17 +3,7 @@ import Link from "next/link";
 import { AssistantSubNav } from "@/components/layout/AssistantSubNav";
 import { examSubNavLinks } from "@/constants/examSubNavLinks";
 import { RemedialHeaderActions } from "@/features/exam-remedial-targets/RemedialHeaderActions";
-import { RemedialSummaryStats } from "@/features/exam-remedial-targets/RemedialSummaryStats";
-import { RemedialTargetsClient } from "@/features/exam-remedial-targets/RemedialTargetsClient";
-import {
-  classFilterOptions,
-  examFilterOptions,
-  remedialStudents,
-  remedialSummaryStats,
-  statusFilterOptions,
-  todayRetestStudents,
-  unscheduledStudents,
-} from "@/data/exams";
+import { RemedialTargetsContainer } from "@/features/exam-remedial-targets/RemedialTargetsContainer";
 import { lexend, notoSansKr } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 
@@ -33,17 +23,7 @@ export function RemedialTargetsOverview() {
           className="max-w-full"
         />
         <PageHeader />
-        <RemedialSummaryStats
-          stats={remedialSummaryStats}
-          todayList={todayRetestStudents}
-          unscheduledList={unscheduledStudents}
-        />
-        <RemedialTargetsClient
-          classOptions={classFilterOptions}
-          examOptions={examFilterOptions}
-          statusOptions={statusFilterOptions}
-          students={remedialStudents}
-        />
+        <RemedialTargetsContainer />
       </div>
     </div>
   );
@@ -69,7 +49,7 @@ function Breadcrumbs() {
         </li>
         <li>/</li>
         <li className="font-medium text-slate-900 dark:text-white">
-          재시험 대상자 관리
+          클리닉 대상자 관리
         </li>
       </ol>
     </nav>
@@ -86,7 +66,7 @@ function PageHeader() {
             "text-3xl font-black text-slate-900 dark:text-white"
           )}
         >
-          재시험 대상자 관리
+          클리닉 대상자 관리
         </h1>
         <p className="mt-1 text-slate-500 dark:text-slate-400">
           기준 점수 미달 학생들의 재시험 예약 및 현황을 관리합니다.

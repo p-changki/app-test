@@ -1,6 +1,38 @@
 import { iconClass } from "@/lib/icon-class";
+import { cn } from "@/lib/utils";
 
-export function PreviewCard() {
+type PreviewCardProps = {
+  title: string;
+  subject: string;
+  grade: string;
+  assistant: string;
+  scheduleLabel: string;
+  startDate?: string;
+  status?: string;
+  studentCount: number;
+};
+
+export function PreviewCard({
+  title,
+  subject,
+  grade,
+  assistant,
+  scheduleLabel,
+  startDate,
+  status,
+  studentCount,
+}: PreviewCardProps) {
+  const displayTitle = title.trim() || "수업명 미입력";
+  const displaySubject = subject.trim() || "과목";
+  const displayGrade = grade.trim() || "학년";
+  const displayAssistant = assistant.trim() || "담당 조교 미지정";
+  const displaySchedule = scheduleLabel.trim() || "시간 미정";
+  const badgeLabel = status?.trim()
+    ? status
+    : startDate
+      ? `개강 ${startDate}`
+      : "개설 준비";
+
   return (
     <div className="sticky top-24">
       <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -14,8 +46,13 @@ export function PreviewCard() {
               "url(https://lh3.googleusercontent.com/aida-public/AB6AXuAwH0qY7PMoymk-agWEo0Gv6b9nWvvFSd5iNFWbO6u3JhckE2PbFt7eVM4tRVRTb7oC_tq_rBKL3yuKzWddhHzaMKuNO_FBbxhifUjKc7_oVJewbG4OBmGjTrgblCfgxwkm2dj_SYHhHgwgNA32sREMPvvYyZPTTQSaQi-Vj-eQe9XsZp5M7D70YHy4rKOkj--6RTaYmAffVKZL17MKcXuN_gCTW8MfrUG91oBDuQuv_i1Zn29h2obxIXJFo04jfIlPtmPZAD2Cek0)",
           }}
         >
-          <span className="absolute left-3 top-3 rounded bg-white/90 px-2 py-1 text-xs font-bold text-slate-900 dark:bg-black/60 dark:text-white">
-            모집중
+          <span
+            className={cn(
+              "absolute left-3 top-3 rounded px-2 py-1 text-xs font-bold",
+              "bg-white/90 text-slate-900 dark:bg-black/60 dark:text-white"
+            )}
+          >
+            {badgeLabel}
           </span>
           <span className="absolute right-3 top-3 rounded-full bg-primary p-1.5 text-white shadow-lg">
             <span className={iconClass("text-[16px]")}>bookmark</span>
@@ -24,14 +61,15 @@ export function PreviewCard() {
         <div className="flex flex-col gap-2 px-4 pb-4 pt-4">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-primary">
-              수학 • 고3
+              {displaySubject} • {displayGrade}
             </span>
             <span className="flex items-center gap-1 text-xs text-slate-400">
-              <span className={iconClass("text-[14px]")}>group</span>0/20
+              <span className={iconClass("text-[14px]")}>group</span>
+              {studentCount}명
             </span>
           </div>
           <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-            [고3] 수능 대비 수학 심화반
+            {displayTitle}
           </h3>
           <div className="flex items-center gap-2">
             <span
@@ -42,18 +80,18 @@ export function PreviewCard() {
               }}
             />
             <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
-              김철수 강사
+              {displayAssistant}
             </span>
           </div>
           <div className="my-2 h-px bg-slate-100 dark:bg-slate-700" />
           <div className="flex flex-col gap-1.5 text-sm text-slate-500 dark:text-slate-400">
             <span className="flex items-center gap-2">
-              <span className={iconClass("text-[16px]")}>schedule</span>월, 목
-              18:00 - 20:00
+              <span className={iconClass("text-[16px]")}>schedule</span>
+              {displaySchedule}
             </span>
             <span className="flex items-center gap-2">
-              <span className={iconClass("text-[16px]")}>location_on</span>102호
-              (중강의실)
+              <span className={iconClass("text-[16px]")}>location_on</span>
+              강의실 미지정
             </span>
           </div>
           <button

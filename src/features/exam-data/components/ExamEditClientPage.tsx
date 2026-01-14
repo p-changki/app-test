@@ -53,12 +53,6 @@ export function ExamEditClientPage({ examId }: { examId: string }) {
                 </Link>
               </li>
               <li>/</li>
-              <li>
-                <Link className="hover:text-primary" href="/exam-answer-entry">
-                  시험지 목록
-                </Link>
-              </li>
-              <li>/</li>
               <li className="font-medium text-slate-900 dark:text-white">
                 시험 수정
               </li>
@@ -79,7 +73,7 @@ export function ExamEditClientPage({ examId }: { examId: string }) {
               </p>
             </div>
             <AssistantSubNav
-              activeHref="/exam-answer-entry"
+              activeHref="/exam-dashboard"
               links={examSubNavLinks}
             />
           </div>

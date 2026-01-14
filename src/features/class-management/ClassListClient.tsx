@@ -18,19 +18,116 @@ import type {
 
 type ClassListClientProps = {
   classRecords: ClassRecord[];
-  levelOptions: readonly string[];
-  dayOptions: readonly string[];
-  statusOptions: readonly string[];
   navLinks: readonly SubNavLink[];
   activeHref: string;
   breadcrumbs?: readonly { label: string; href?: string }[];
 };
 
+const mockExamDrafts = [
+  {
+    id: "exam-01",
+    title: "2025 1학기 중간고사 · 수학 II",
+    subject: "수학 II",
+    updatedAt: "2025-12-18",
+    status: "작성 중",
+  },
+  {
+    id: "exam-02",
+    title: "6월 모의평가 대비 실전 테스트",
+    subject: "수학 I",
+    updatedAt: "2025-12-20",
+    status: "검토 요청",
+  },
+  {
+    id: "exam-03",
+    title: "단원별 실력 점검 (확률과 통계)",
+    subject: "확률과 통계",
+    updatedAt: "2025-12-24",
+    status: "완료",
+  },
+];
+
+const mockExamSheets = [
+  {
+    id: "sheet-01",
+    name: "수학 II 기말 대비 문제지",
+    updatedAt: "2025-12-21",
+    pages: 12,
+  },
+  {
+    id: "sheet-02",
+    name: "6월 모의평가 실전 문제지",
+    updatedAt: "2025-12-23",
+    pages: 8,
+  },
+  {
+    id: "sheet-03",
+    name: "수학 I 단원평가 문제지",
+    updatedAt: "2025-12-27",
+    pages: 10,
+  },
+];
+
+const mockRegistrationDetails: Record<
+  string,
+  {
+    description: string;
+    students: Array<{
+      name: string;
+      phone: string;
+      school: string;
+      grade: string;
+      parentPhone: string;
+    }>;
+  }
+> = {
+  "class-a-2025-01": {
+    description: "심화 개념과 실전 문제풀이를 병행하는 상위권 대상 수업입니다.",
+    students: [
+      {
+        name: "김민준",
+        phone: "010-1234-5678",
+        school: "서울고",
+        grade: "고2",
+        parentPhone: "010-9876-5432",
+      },
+      {
+        name: "박서연",
+        phone: "010-9999-1212",
+        school: "서울여고",
+        grade: "고2",
+        parentPhone: "010-2222-3333",
+      },
+    ],
+  },
+  "class-b-2025-01": {
+    description: "모의고사 대비 집중 클리닉과 약점 보완 과정을 진행합니다.",
+    students: [
+      {
+        name: "최하나",
+        phone: "010-2222-3333",
+        school: "대전여고",
+        grade: "고3",
+        parentPhone: "010-3333-4444",
+      },
+    ],
+  },
+  "class-c-2025-01": {
+    description: "기초 개념부터 심화까지 단계별 커리큘럼으로 구성합니다.",
+    students: [
+      {
+        name: "문채운",
+        phone: "010-5555-6666",
+        school: "세종고",
+        grade: "고1",
+        parentPhone: "010-7777-8888",
+      },
+    ],
+  },
+};
+
 export function ClassListClient({
   classRecords,
-  levelOptions,
-  dayOptions,
-  statusOptions,
   navLinks,
   activeHref,
   breadcrumbs = [
@@ -130,11 +227,6 @@ export function ClassListClient({
           onSearch={setSearchTerm}
         />
         <OverviewSummary classRecords={classRecords} />
-        <FilterPanel
-          levelOptions={levelOptions}
-          dayOptions={dayOptions}
-          statusOptions={statusOptions}
-        />
         <ClassList records={filteredClasses} />
       </main>
     </div>
@@ -210,16 +302,10 @@ function OverviewSummary({ classRecords }: { classRecords: ClassRecord[] }) {
   );
   const fillRate =
     totalCapacity > 0 ? Math.round((totalEnrolled / totalCapacity) * 100) : 0;
-  const upcomingAssessments = classRecords.filter(
-    (record) => record.nextAssessment.date <= "2025-01-20"
-  ).length;
-  const waitlist = classRecords.reduce(
-    (sum, record) => sum + (record.waitlist ?? 0),
-    0
-  );
+  // upcomingAssessments / waitlist removed per UI request
 
   return (
-    <section className="mb-6 grid gap-4 rounded-2xl border border-slate-200 bg-[var(--surface-background)] p-4 shadow-sm dark:border-slate-700 dark:bg-[var(--surface-background)] md:grid-cols-4">
+    <section className="mb-6 grid gap-4 rounded-2xl border border-slate-200 bg-[var(--surface-background)] p-4 shadow-sm dark:border-slate-700 dark:bg-[var(--surface-background)] md:grid-cols-2">
       <SummaryCard
         icon="class"
         label="총 클래스"
@@ -231,19 +317,6 @@ function OverviewSummary({ classRecords }: { classRecords: ClassRecord[] }) {
         label="등록 인원"
         value={`${totalEnrolled}명`}
         description={`정원 대비 ${fillRate}%`}
-      />
-      <SummaryCard
-        icon="rule"
-        label="다가오는 평가"
-        value={`${upcomingAssessments}건`}
-        description="1주 이내"
-      />
-      <SummaryCard
-        icon="hourglass_top"
-        label="대기 인원"
-        value={`${waitlist}명`}
-        description="추가 개설 검토"
-        status="alert"
       />
     </section>
   );
@@ -284,79 +357,9 @@ function SummaryCard({
   );
 }
 
-function FilterPanel({
-  levelOptions,
-  dayOptions,
-  statusOptions,
-}: {
-  levelOptions: readonly string[];
-  dayOptions: readonly string[];
-  statusOptions: readonly string[];
-}) {
-  return (
-    <section className="mb-6 rounded-xl border border-slate-200 bg-[var(--surface-background)] p-5 shadow-sm dark:border-slate-700 dark:bg-[var(--surface-background)]">
-      <div className="grid gap-4 md:grid-cols-4">
-        <FilterSelect label="학년 구분" options={levelOptions} />
-        <FilterSelect label="요일" options={dayOptions} />
-        <FilterSelect label="상태" options={statusOptions} />
-        <FilterSearch label="강사 검색" placeholder="강사 / 조교 이름" />
-      </div>
-    </section>
-  );
-}
-
-function FilterSelect({
-  label,
-  options,
-}: {
-  label: string;
-  options: readonly string[];
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-bold text-slate-500 dark:text-slate-400">
-        {label}
-      </label>
-      <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-900 shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-800/60 dark:text-white">
-        {options.map((option) => (
-          <option key={option}>{option}</option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
-function FilterSearch({
-  label,
-  placeholder,
-}: {
-  label: string;
-  placeholder: string;
-}) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-        {label}
-      </span>
-      <div className="relative">
-        <input
-          type="search"
-          placeholder={placeholder}
-          className="w-full rounded-lg border border-slate-200 bg-[var(--surface-background)] py-2.5 pl-10 pr-3 text-sm text-slate-900 shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-[var(--surface-background)] dark:text-white"
-        />
-        <span
-          className={iconClass(
-            "pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-          )}
-        >
-          search
-        </span>
-      </div>
-    </label>
-  );
-}
-
 function ClassList({ records }: { records: ClassRecord[] }) {
+  const [detailRecord, setDetailRecord] = useState<ClassRecord | null>(null);
+
   return (
     <section className="flex flex-col gap-6 pb-10">
       {records.length === 0 ? (
@@ -364,91 +367,267 @@ function ClassList({ records }: { records: ClassRecord[] }) {
           조건에 맞는 클래스가 없습니다.
         </div>
       ) : (
-        records.map((record) => <ClassCard key={record.id} record={record} />)
+        <div className="grid gap-6 md:grid-cols-2">
+          {records.map((record) => (
+            <PreviewClassCard
+              key={record.id}
+              record={record}
+              onOpenDetail={() => setDetailRecord(record)}
+            />
+          ))}
+        </div>
       )}
+      {detailRecord ? (
+        <ClassExamDetailModal
+          record={detailRecord}
+          onClose={() => setDetailRecord(null)}
+        />
+      ) : null}
     </section>
   );
 }
 
-function ClassCard({ record }: { record: ClassRecord }) {
-  const fillRate = Math.round((record.enrolled / record.capacity) * 100);
+function PreviewClassCard({
+  record,
+  onOpenDetail,
+}: {
+  record: ClassRecord;
+  onOpenDetail: () => void;
+}) {
+  const filledLabel = `${record.enrolled}/${record.capacity}`;
   return (
-    <article className="rounded-3xl border border-slate-200 bg-[var(--surface-background)] shadow-lg shadow-slate-200/40 dark:border-slate-700 dark:bg-[var(--surface-background)]">
-      <header className="flex flex-col gap-3 border-b border-slate-200 px-6 py-5 dark:border-slate-700 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-            {record.level} · {record.subject}
-          </p>
-          <h2 className="text-2xl font-black text-slate-900 dark:text-white">
-            {record.name}
-          </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            담당 {record.teacher} · 조교 {record.assistant}
-          </p>
-        </div>
-        <div className="flex flex-col items-start gap-2 text-sm lg:items-end">
+    <article className="overflow-hidden rounded-2xl border border-slate-200 bg-[var(--surface-background)] shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 dark:border-slate-700 dark:bg-[var(--surface-background)]">
+      <div className="relative h-32 overflow-hidden bg-gradient-to-br from-slate-100 via-white to-slate-200 dark:from-[#1c2732] dark:via-[#1f2b38] dark:to-[#121922]">
+        <span className="absolute left-3 top-3 rounded bg-white/90 px-2 py-1 text-xs font-bold text-slate-900 shadow-sm dark:bg-black/60 dark:text-white">
           <StatusBadge status={record.status} />
-          <div className="flex flex-wrap gap-2">
-            {(record.focusTags ?? []).map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        </div>
-      </header>
-      <div className="space-y-6 px-6 py-6">
-        <div className="grid gap-4 rounded-2xl border border-slate-100 bg-[var(--surface-background)] p-4 dark:border-slate-700 dark:bg-[var(--surface-background)] md:grid-cols-4">
-          <StatBlock
-            label="수업 요일"
-            value={record.schedule.days.join(", ")}
-          />
-          <StatBlock label="시간" value={record.schedule.time} />
-          <StatBlock label="장소" value={record.schedule.location} />
-          <div>
-            <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400">
-              <span>정원 / 등록</span>
-              <span>
-                {record.enrolled} / {record.capacity}
-              </span>
-            </div>
-            <div className="mt-2 h-2 rounded-full bg-slate-200 dark:bg-slate-800">
-              <div
-                className="h-full rounded-full bg-primary"
-                style={{ width: `${fillRate}%` }}
-              />
-            </div>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              대기 {record.waitlist ?? 0}명
-            </p>
-          </div>
-        </div>
-        <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-          <AlertCard
-            startDate={record.startDate}
-            alerts={record.alerts ?? []}
-          />
-          <AssessmentCard assessment={record.nextAssessment} />
-        </div>
-        <WatchStudentTable students={record.watchStudents ?? []} />
-      </div>
-      <footer className="flex flex-wrap items-center gap-3 border-t border-slate-200 px-6 py-4 dark:border-slate-700">
-        <button className="flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800">
-          <span className={iconClass("text-[18px]")}>edit_calendar</span>
-          일정 조정
-        </button>
-        <button className="flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800">
-          <span className={iconClass("text-[18px]")}>group_add</span>
-          대기자 관리
-        </button>
-        <span className="ml-auto text-xs text-slate-500 dark:text-slate-400">
-          마지막 업데이트 · 오늘 14:30
         </span>
-      </footer>
+        <span className="absolute right-3 top-3 rounded-full bg-primary p-1.5 text-white shadow-lg">
+          <span className={iconClass("text-[16px]")}>bookmark</span>
+        </span>
+      </div>
+      <div className="space-y-3 px-4 pb-4 pt-4">
+        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+          <span className="font-semibold text-primary">
+            {record.subject} • {record.level}
+          </span>
+          <span className="flex items-center gap-1">
+            <span className={iconClass("text-[14px]")}>group</span>
+            {filledLabel}
+          </span>
+        </div>
+        <div>
+          <p className="text-lg font-bold text-slate-900 dark:text-white">
+            {record.name}
+          </p>
+          <p className="text-sm text-slate-500 dark:text-slate-300">
+            담당 조교 {record.assistant}
+          </p>
+        </div>
+        <div className="space-y-1 text-sm text-slate-500 dark:text-slate-400">
+          <span className="flex items-center gap-2">
+            <span className={iconClass("text-[16px]")}>schedule</span>
+            {record.schedule.days.join(", ")} · {record.schedule.time}
+          </span>
+          <span className="flex items-center gap-2">
+            <span className={iconClass("text-[16px]")}>location_on</span>
+            {record.schedule.location}
+          </span>
+        </div>
+        <button
+          type="button"
+          className="mt-2 w-full rounded-lg bg-slate-100 py-2 text-sm font-bold text-slate-900 transition hover:bg-primary hover:text-white dark:bg-slate-700 dark:text-white"
+          onClick={onOpenDetail}
+        >
+          상세 보기
+        </button>
+      </div>
     </article>
+  );
+}
+
+function ClassExamDetailModal({
+  record,
+  onClose,
+}: {
+  record: ClassRecord;
+  onClose: () => void;
+}) {
+  const registration =
+    mockRegistrationDetails[record.id] ??
+    ({
+      description: "등록된 수업 상세 설명이 없습니다.",
+      students: [],
+    } as const);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6">
+      <div className="w-full max-w-4xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-[#1a2632]">
+        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-700">
+          <div>
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              시험 관리
+            </p>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+              {record.name} · 시험 제작/시험지 목록
+            </h3>
+          </div>
+          <button
+            type="button"
+            className="rounded-full p-2 text-slate-500 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+            onClick={onClose}
+            aria-label="모달 닫기"
+          >
+            <span className={iconClass("text-[20px]")}>close</span>
+          </button>
+        </div>
+        <div className="max-h-[75vh] overflow-y-auto px-6 py-6">
+          <div className="space-y-6">
+            <section className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-[#111418]">
+              <h4 className="mb-3 text-sm font-bold text-slate-700 dark:text-slate-200">
+                수업 개설 상세 정보
+              </h4>
+              <div className="grid gap-3 md:grid-cols-2">
+                <DetailItem label="수업명" value={record.name} />
+                <DetailItem
+                  label="과목 / 학년"
+                  value={`${record.subject} · ${record.level}`}
+                />
+                <DetailItem label="수업 상태" value={record.status} />
+                <DetailItem label="개강일" value={record.startDate} />
+                <DetailItem label="담당 조교" value={record.assistant} />
+                <DetailItem
+                  label="정원/등록"
+                  value={`${record.enrolled} / ${record.capacity}`}
+                />
+                <DetailItem
+                  label="시간표"
+                  value={`${record.schedule.days.join(", ")} · ${
+                    record.schedule.time
+                  }`}
+                />
+                <DetailItem label="강의실" value={record.schedule.location} />
+              </div>
+              <div className="mt-4 rounded-lg border border-dashed border-slate-200 p-3 text-sm text-slate-600 dark:border-slate-600 dark:text-slate-300">
+                {registration.description}
+              </div>
+              <div className="mt-4">
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                  등록 학생 ({registration.students.length}명)
+                </p>
+                {registration.students.length === 0 ? (
+                  <p className="mt-2 text-xs text-slate-400">
+                    등록된 학생이 없습니다.
+                  </p>
+                ) : (
+                  <div className="mt-2 grid gap-2 md:grid-cols-2">
+                    {registration.students.map((student) => (
+                      <div
+                        key={`${record.id}-${student.name}`}
+                        className="rounded-lg border border-slate-200 bg-white p-3 text-xs text-slate-600 dark:border-slate-600 dark:bg-[#0c1219] dark:text-slate-300"
+                      >
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                          {student.name}
+                        </p>
+                        <p>
+                          {student.school} · {student.grade}
+                        </p>
+                        <p>학생: {student.phone}</p>
+                        <p>학부모: {student.parentPhone}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+
+            <div className="grid gap-6">
+              <section className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-[#111418]">
+                <h4 className="mb-3 text-sm font-bold text-slate-700 dark:text-slate-200">
+                  시험지 목록
+                </h4>
+                <div className="space-y-3">
+                  {mockExamSheets.map((sheet) => (
+                    <div
+                      key={sheet.id}
+                      className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-600 dark:bg-[#0c1219]"
+                    >
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                        {sheet.name}
+                      </p>
+                      <div className="mt-1 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                        <span>수정 {sheet.updatedAt}</span>
+                        <span className="h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-600" />
+                        <span>{sheet.pages}p</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-[#111418]">
+                <h4 className="mb-3 text-sm font-bold text-slate-700 dark:text-slate-200">
+                  시험 제작 초안
+                </h4>
+                <div className="space-y-3">
+                  {mockExamDrafts.map((draft) => (
+                    <div
+                      key={draft.id}
+                      className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-600 dark:bg-[#0c1219]"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                          {draft.title}
+                        </p>
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                          {draft.status}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                        <span>{draft.subject}</span>
+                        <span className="h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-600" />
+                        <span>수정 {draft.updatedAt}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-[#111418]">
+                <h4 className="mb-3 text-sm font-bold text-slate-700 dark:text-slate-200">
+                  시험 운영 요약
+                </h4>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <StatBlock label="정원" value={`${record.capacity}명`} />
+                  <StatBlock label="등록" value={`${record.enrolled}명`} />
+                  <StatBlock label="대기" value={`${record.waitlist ?? 0}명`} />
+                </div>
+              </section>
+
+              <div className="grid gap-6 lg:grid-cols-2">
+                <AlertCard
+                  startDate={record.startDate}
+                  alerts={record.alerts}
+                />
+                <AssessmentCard assessment={record.nextAssessment} />
+              </div>
+
+              <WatchStudentTable students={record.watchStudents} />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DetailItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-600 dark:border-slate-600 dark:bg-[#0c1219] dark:text-slate-300">
+      <p className="text-xs font-semibold text-slate-400">{label}</p>
+      <p className="mt-1 font-semibold text-slate-900 dark:text-white">
+        {value}
+      </p>
+    </div>
   );
 }
 

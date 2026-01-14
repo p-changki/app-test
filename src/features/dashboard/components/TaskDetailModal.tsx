@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 
 type TaskDetailModalProps = {
   task: DashboardTaskRow;
+  onStatusChange?: (status: "진행 중" | "완료") => void;
   triggerClassName?: string;
   children: ReactNode;
 };
@@ -20,6 +21,7 @@ const priorityBadgeStyles: Record<DashboardTaskRow["priority"], string> = {
 
 export function TaskDetailModal({
   task,
+  onStatusChange,
   children,
   triggerClassName,
 }: TaskDetailModalProps) {
@@ -106,14 +108,6 @@ export function TaskDetailModal({
                     <span className="font-semibold">{task.assigner}</span>
                   </div>
                 </InfoItem>
-                <InfoItem label="마감 기한">
-                  <div className="flex items-center gap-1 text-slate-700 dark:text-slate-200">
-                    <span className={iconClass("text-[18px] text-slate-400")}>
-                      event
-                    </span>
-                    {task.dueDateTime}
-                  </div>
-                </InfoItem>
                 <InfoItem label="우선순위">
                   <div className="flex items-center gap-1 font-semibold">
                     <span className={iconClass("text-[18px] text-slate-400")}>
@@ -177,6 +171,11 @@ export function TaskDetailModal({
                         "flex-1 min-w-[120px] rounded-lg border px-3 py-2 text-sm font-medium transition",
                         status.className
                       )}
+                      onClick={() =>
+                        onStatusChange?.(
+                          status.value === "done" ? "완료" : "진행 중"
+                        )
+                      }
                     >
                       {status.label}
                     </button>
@@ -218,12 +217,6 @@ function InfoItem({ label, children }: { label: string; children: ReactNode }) {
 }
 
 const statusButtons = [
-  {
-    label: "대기중",
-    value: "pending",
-    className:
-      "border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300",
-  },
   {
     label: "진행 중",
     value: "progress",

@@ -5,11 +5,13 @@ import { useSyncExternalStore } from "react";
 import { examDefinitions } from "@/data/exams";
 import type { ExamQuestion, ExamStatus, RegisteredExam } from "@/types/exams";
 
-const STORAGE_KEY = "eduops.exam-records";
+const STORAGE_KEY = "eduops.exam-records.v2";
 
 type DraftQuestionInput = {
   label: string;
   type: ExamQuestion["type"];
+  category: string;
+  source: string;
   points: number;
   answer: string;
 };
@@ -17,6 +19,8 @@ type DraftQuestionInput = {
 export type ExamDraft = {
   title: string;
   subject: string;
+  examType: string;
+  source: string;
   targetClass: string;
   examDate: string;
   passScore: number;
@@ -106,6 +110,11 @@ export function registerExam(record: RegisteredExam) {
   });
 }
 
+export function removeExams(ids: string[]) {
+  if (!ids.length) return;
+  setState((prev) => prev.filter((exam) => !ids.includes(exam.id)));
+}
+
 export function createExamId(title: string) {
   const slug = title
     .trim()
@@ -126,22 +135,20 @@ export function createExamFromDraft(draft: ExamDraft): RegisteredExam {
     id: index + 1,
     label: question.label.trim() || `문항 ${index + 1}`,
     type: question.type,
-    points:
-      Number.isFinite(question.points) && question.points > 0
-        ? question.points
-        : 1,
+    category: question.category?.trim() || "",
+    source: question.source?.trim() || "",
+    points: Number.isFinite(question.points) ? question.points : 0,
     answer: question.answer.trim() || "-",
   }));
 
-  const totalScore = questions.reduce(
-    (sum, question) => sum + question.points,
-    0
-  );
+  const totalScore = 100;
 
   return {
     id: createExamId(draft.title),
     title: draft.title.trim() || `새 시험 ${formatDate(now)}`,
     subject: draft.subject,
+    examType: draft.examType.trim() || "일반 시험",
+    source: draft.source.trim() || "학원 제작",
     classId: draft.targetClass || "unassigned",
     targetClass: draft.targetClass,
     examDate: draft.examDate || formatDate(now),

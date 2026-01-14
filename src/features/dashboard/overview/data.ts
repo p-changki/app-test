@@ -1,9 +1,7 @@
 export {
-  clinicScheduleSummary,
-  clinicStudents,
   dashboardInquiryRows,
   dashboardSummaryCards,
   dashboardTaskRows,
-  retestRequests,
+  retestScheduleItems,
   todaysClassSessions,
 } from "@/data/dashboard";

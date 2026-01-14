@@ -32,10 +32,6 @@ export function RemedialHeaderActions() {
 
   return (
     <div className="flex flex-wrap gap-2">
-      <button className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
-        <span className={iconClass("text-lg")}>download</span>
-        명단 다운로드
-      </button>
       <button
         type="button"
         onClick={handleSend}

@@ -1,7 +1,5 @@
 import { notoSansKr } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
-import { ClinicScheduleCard } from "@/features/dashboard/overview/ClinicScheduleCard";
-import { ClinicStudentsCard } from "@/features/dashboard/overview/ClinicStudentsCard";
 import { InquiryTable } from "@/features/dashboard/overview/InquiryTable";
 import { PageHeroSection } from "@/features/dashboard/overview/PageHeroSection";
 import { RetestRequestsCard } from "@/features/dashboard/overview/RetestRequestsCard";
@@ -9,12 +7,9 @@ import { SummaryCardsSection } from "@/features/dashboard/overview/SummaryCardsS
 import { TaskTable } from "@/features/dashboard/overview/TaskTable";
 import { TodayClassesCard } from "@/features/dashboard/overview/TodayClassesCard";
 import {
-  clinicScheduleSummary,
-  clinicStudents,
   dashboardInquiryRows,
   dashboardSummaryCards,
-  dashboardTaskRows,
-  retestRequests,
+  retestScheduleItems,
   todaysClassSessions,
 } from "@/features/dashboard/overview/data";
 
@@ -32,13 +27,11 @@ export function DashboardOverview() {
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
           <div className="space-y-6 xl:col-span-8">
             <InquiryTable rows={dashboardInquiryRows} />
-            <TaskTable tasks={dashboardTaskRows} />
+            <TaskTable />
           </div>
           <div className="space-y-6 xl:col-span-4">
+            <RetestRequestsCard items={retestScheduleItems} />
             <TodayClassesCard sessions={todaysClassSessions} />
-            <ClinicStudentsCard students={clinicStudents} />
-            <ClinicScheduleCard schedule={clinicScheduleSummary} />
-            <RetestRequestsCard requests={retestRequests} />
           </div>
         </div>
       </main>

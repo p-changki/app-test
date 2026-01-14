@@ -33,20 +33,14 @@ export function InquiryDashboardPage() {
   );
 
   const unansweredRows = useMemo(
-    () =>
-      inquiries.filter(
-        (inquiry) =>
-          inquiry.status === "조교 이관" || inquiry.status === "강사 검토"
-      ),
+    () => inquiries.filter((inquiry) => inquiry.status === "강사 검토"),
     [inquiries]
   );
 
   const totalCount = inquiries.length;
-  const urgentCount = inquiries.filter(
-    (inquiry) => inquiry.status === "조교 이관"
-  ).length;
+  const urgentCount = unansweredRows.length;
   const inProgressCount = inquiries.filter(
-    (inquiry) => inquiry.status === "강사 검토"
+    (inquiry) => inquiry.status === "답변 완료"
   ).length;
   const completedCount = inquiries.filter(
     (inquiry) =>
@@ -61,33 +55,24 @@ export function InquiryDashboardPage() {
           <div className="flex flex-wrap items-end justify-between gap-4 p-8 pb-4">
             <div className="flex flex-col gap-2">
               <h2 className="text-3xl font-black tracking-tight text-[#111418] dark:text-white">
-                문의 관리 총괄 대시보드
+                소통 총괄 대시보드
               </h2>
               <p className="text-sm font-medium text-[#617589] dark:text-gray-400">
-                실시간 학생 문의 현황 및 조교진 업무 프로세스를 관리합니다.
+                실시간 학생 문의 현황과 강사/조교 응대 프로세스를 관리합니다.
               </p>
             </div>
             <div className="flex gap-2">
-              <button
-                className="flex items-center gap-2 rounded-lg border border-[#dbe0e6] bg-white px-4 py-2 text-sm font-bold shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800"
-                type="button"
-              >
-                <span className="material-symbols-outlined text-sm">
-                  download
-                </span>
-                엑셀 내보내기
-              </button>
               <button
                 className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white shadow-sm transition-colors hover:bg-primary/90"
                 type="button"
                 onClick={() => setNoticeOpen(true)}
               >
-                <span className="material-symbols-outlined text-sm">add</span>
-                공지사항 등록
+                <span className="material-symbols-outlined text-sm">send</span>
+                메시지 보내기
               </button>
             </div>
           </div>
-          <div className="grid grid-cols-1 gap-4 px-8 py-4 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 px-8 py-4 md:grid-cols-3">
             <StatCard
               title="누적 문의"
               subtitle="전체"
@@ -107,18 +92,9 @@ export function InquiryDashboardPage() {
               onClick={() => setUnansweredOpen(true)}
             />
             <StatCard
-              title="진행 중"
-              value={inProgressCount.toLocaleString("en-US")}
-              highlight
-              highlightColor="border-l-primary"
-              trend="평균 처리 1.2h"
-              trendIcon="sync"
-              trendColor="text-primary"
-            />
-            <StatCard
               title="오늘 완료"
               value={completedCount.toLocaleString("en-US")}
-              trend="목표 달성 92%"
+              trend={`${inProgressCount}건 응답 대기`}
               trendIcon="check_circle"
               trendColor="text-[#078838]"
             />
@@ -168,7 +144,7 @@ export function InquiryDashboardPage() {
                       <th className="px-4 py-4">학생명 (학번)</th>
                       <th className="px-4 py-4">문의 제목</th>
                       <th className="px-4 py-4">책임 강사</th>
-                      <th className="px-4 py-4">담당 조교</th>
+                      <th className="px-4 py-4">공유 범위</th>
                       <th className="px-4 py-4 text-right">최종 활동</th>
                     </tr>
                   </thead>
@@ -224,20 +200,9 @@ export function InquiryDashboardPage() {
                           </div>
                         </td>
                         <td className="px-4 py-4">
-                          {row.assistant ? (
-                            <div className="flex items-center gap-2">
-                              <div className="flex size-6 items-center justify-center rounded-full bg-primary/20 text-[10px] font-bold text-primary">
-                                {row.assistantInitials}
-                              </div>
-                              <span className="text-sm font-medium">
-                                {row.assistant}
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-sm italic text-[#617589]">
-                              - 미배정 -
-                            </span>
-                          )}
+                          <span className="text-sm font-medium text-[#111418] dark:text-white">
+                            강사/조교 공통
+                          </span>
                         </td>
                         <td className="px-4 py-4 text-right text-xs font-medium text-[#617589]">
                           {row.lastActivity}
@@ -339,13 +304,10 @@ type InquiryRow = {
   context: string;
   instructor: string;
   instructorAvatar: string;
-  assistant?: string;
-  assistantInitials?: string;
   lastActivity: string;
 };
 
 const STATUS_BADGE_STYLES: Record<InquiryStatus, string> = {
-  "조교 이관": "bg-[#fce8e6] text-[#e73908]",
   "강사 검토": "bg-primary/10 text-primary",
   "답변 완료": "bg-green-100 text-green-700",
   "학생/학부모 확인 완료": "bg-[#f0f2f4] text-[#617589]",
@@ -380,8 +342,6 @@ function buildInquiryRow(inquiry: InquiryRecord): InquiryRow {
     context: inquiry.category,
     instructor: inquiry.instructor.name,
     instructorAvatar: inquiry.instructor.avatarUrl ?? "",
-    assistant: inquiry.assistant?.name,
-    assistantInitials: inquiry.assistant?.initials,
     lastActivity: `${getElapsedLabel(inquiry.updatedAt)} 전`,
   };
 }
@@ -577,6 +537,26 @@ function NoticeModal({
   const filteredStudents = students.filter((student) =>
     student.toLowerCase().includes(studentSearch.toLowerCase())
   );
+  const [messageType, setMessageType] = useState<"notice" | "message">(
+    "notice"
+  );
+  const isNotice = messageType === "notice";
+  const modalTitle = isNotice ? "공지사항 등록" : "메시지 보내기";
+  const titleLabel = isNotice ? "공지 제목" : "메시지 제목";
+  const titlePlaceholder = isNotice
+    ? "공지사항 제목을 입력하세요 (최대 50자)"
+    : "메시지 제목을 입력하세요 (최대 50자)";
+  const contentLabel = isNotice ? "공지 내용" : "메시지 내용";
+  const contentPlaceholder = isNotice
+    ? "공지 내용을 상세히 입력해주세요. 이미지 및 링크 첨부가 가능합니다."
+    : "학생에게 보낼 메시지를 입력해주세요.";
+  const publishLabel = isNotice ? "게시 방법" : "발송 방법";
+  const publishNowLabel = isNotice ? "즉시 게시" : "즉시 발송";
+  const publishScheduleLabel = isNotice ? "예약 게시" : "예약 발송";
+  const audienceLabel = isNotice ? "게시 대상 설정" : "수신 대상 설정";
+  const scheduleInfo = isNotice
+    ? "예약된 공지는 설정하신 시간에 자동으로 게시되며, 게시 시점에 대상 수강생들에게 알림이 발송됩니다."
+    : "예약된 메시지는 설정하신 시간에 자동으로 발송되며, 발송 시점에 대상 수강생들에게 전달됩니다.";
 
   const addStudent = (student: string) => {
     if (selectedStudents.includes(student)) return;
@@ -599,69 +579,97 @@ function NoticeModal({
         className="flex max-h-[95vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-[#dbe0e6] bg-white shadow-2xl dark:border-gray-700 dark:bg-[#1a242d]"
         role="dialog"
         aria-modal="true"
-        aria-label="공지사항 등록 모달"
+        aria-label="메시지 보내기 모달"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-[#dbe0e6] bg-white px-8 py-5 dark:border-gray-700 dark:bg-[#1a242d]">
           <div className="flex items-center gap-3">
             <div className="flex size-8 items-center justify-center rounded bg-primary/10 text-primary">
               <span className="material-symbols-outlined text-[20px]">
-                campaign
+                {isNotice ? "campaign" : "send"}
               </span>
             </div>
             <h3 className="text-lg font-bold tracking-tight text-[#111418] dark:text-white">
-              공지사항 등록
+              {modalTitle}
             </h3>
           </div>
           <button
             type="button"
             className="text-[#617589] transition-colors hover:text-[#111418] dark:hover:text-white"
             onClick={onClose}
-            aria-label="공지사항 등록 모달 닫기"
+            aria-label="메시지 보내기 모달 닫기"
           >
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
         <div className="flex-1 space-y-8 overflow-y-auto p-8">
-          <div className="flex items-center justify-between rounded-xl border border-amber-100 bg-amber-50 p-4 dark:border-amber-900/30 dark:bg-amber-900/10">
-            <div className="flex items-center gap-3">
-              <span className="material-symbols-outlined text-amber-500">
-                priority_high
-              </span>
-              <div>
-                <p className="text-sm font-bold text-amber-800 dark:text-amber-200">
-                  중요 공지사항으로 지정
-                </p>
-                <p className="text-[11px] text-amber-600 dark:text-amber-400">
-                  게시판 최상단에 고정되며 알림이 발송됩니다.
-                </p>
-              </div>
+          <div className="flex flex-col gap-4 rounded-xl border border-[#dbe0e6] bg-[#f8f9fa] p-4 dark:border-gray-700 dark:bg-gray-800/40">
+            <p className="text-xs font-semibold text-[#617589]">
+              발송 유형 선택
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { value: "notice", label: "공지사항" },
+                { value: "message", label: "일반 메시지" },
+              ].map((item) => (
+                <button
+                  key={item.value}
+                  type="button"
+                  className={`rounded-full px-4 py-2 text-xs font-bold transition ${
+                    messageType === item.value
+                      ? "bg-primary text-white"
+                      : "bg-white text-[#617589] hover:text-[#111418] dark:bg-[#1a242d] dark:text-gray-300"
+                  }`}
+                  onClick={() =>
+                    setMessageType(item.value as "notice" | "message")
+                  }
+                >
+                  {item.label}
+                </button>
+              ))}
             </div>
-            <label className="relative inline-flex cursor-pointer items-center">
-              <input
-                className="sr-only peer"
-                type="checkbox"
-                checked={importantNotice}
-                onChange={(event) => onImportantChange(event.target.checked)}
-              />
-              <div className="relative h-6 w-11 rounded-full bg-gray-200 transition peer-checked:bg-amber-500 dark:bg-gray-700">
-                <span className="absolute left-[2px] top-[2px] h-5 w-5 rounded-full border border-gray-300 bg-white transition-all peer-checked:translate-x-full peer-checked:border-white" />
-              </div>
-            </label>
           </div>
+          {isNotice ? (
+            <div className="flex items-center justify-between rounded-xl border border-amber-100 bg-amber-50 p-4 dark:border-amber-900/30 dark:bg-amber-900/10">
+              <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-amber-500">
+                  priority_high
+                </span>
+                <div>
+                  <p className="text-sm font-bold text-amber-800 dark:text-amber-200">
+                    중요 공지사항으로 지정
+                  </p>
+                  <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                    게시판 최상단에 고정되며 알림이 발송됩니다.
+                  </p>
+                </div>
+              </div>
+              <label className="relative inline-flex cursor-pointer items-center">
+                <input
+                  className="sr-only peer"
+                  type="checkbox"
+                  checked={importantNotice}
+                  onChange={(event) => onImportantChange(event.target.checked)}
+                />
+                <div className="relative h-6 w-11 rounded-full bg-gray-200 transition peer-checked:bg-amber-500 dark:bg-gray-700">
+                  <span className="absolute left-[2px] top-[2px] h-5 w-5 rounded-full border border-gray-300 bg-white transition-all peer-checked:translate-x-full peer-checked:border-white" />
+                </div>
+              </label>
+            </div>
+          ) : null}
           <div className="space-y-2">
             <label className="flex items-center gap-1 text-sm font-bold text-[#111418] dark:text-white">
-              공지 제목 <span className="text-red-500">*</span>
+              {titleLabel} <span className="text-red-500">*</span>
             </label>
             <input
               className="w-full rounded-xl border-none bg-[#f0f2f4] px-4 py-3 text-sm placeholder:text-[#617589] focus:ring-2 focus:ring-primary transition-all dark:bg-gray-800"
-              placeholder="공지사항 제목을 입력하세요 (최대 50자)"
+              placeholder={titlePlaceholder}
               type="text"
             />
           </div>
           <div className="space-y-4">
             <label className="text-sm font-bold text-[#111418] dark:text-white">
-              게시 방법
+              {publishLabel}
             </label>
             <div className="rounded-xl border border-[#dbe0e6] bg-[#f8f9fa] p-5 dark:border-gray-700 dark:bg-gray-800/40">
               <div className="flex flex-wrap gap-6">
@@ -675,7 +683,7 @@ function NoticeModal({
                     onChange={() => onPublishMethodChange("now")}
                   />
                   <span className="text-sm font-medium text-[#111418] dark:text-white">
-                    즉시 게시
+                    {publishNowLabel}
                   </span>
                 </label>
                 <label className="flex cursor-pointer items-center gap-2">
@@ -688,7 +696,7 @@ function NoticeModal({
                     onChange={() => onPublishMethodChange("schedule")}
                   />
                   <span className="text-sm font-medium text-[#111418] dark:text-white">
-                    예약 게시
+                    {publishScheduleLabel}
                   </span>
                 </label>
               </div>
@@ -761,8 +769,7 @@ function NoticeModal({
                     info
                   </span>
                   <p className="text-[11px] font-medium leading-relaxed">
-                    예약된 공지는 설정하신 시간에 자동으로 게시되며, 게시 시점에
-                    대상 수강생들에게 알림이 발송됩니다.
+                    {scheduleInfo}
                   </p>
                 </div>
               </div>
@@ -771,7 +778,7 @@ function NoticeModal({
           <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-2">
               <label className="text-sm font-bold text-[#111418] dark:text-white">
-                게시 대상 설정
+                {audienceLabel}
               </label>
               <div className="relative">
                 <select
@@ -903,7 +910,7 @@ function NoticeModal({
           ) : null}
           <div className="space-y-2">
             <label className="text-sm font-bold text-[#111418] dark:text-white">
-              공지 내용
+              {contentLabel}
             </label>
             <div className="overflow-hidden rounded-xl border border-[#dbe0e6] dark:border-gray-700">
               <div className="flex gap-2 border-b border-[#dbe0e6] bg-[#f8f9fa] px-3 py-2 dark:border-gray-700 dark:bg-gray-800/50">
@@ -927,7 +934,7 @@ function NoticeModal({
               </div>
               <textarea
                 className="min-h-[200px] w-full resize-none border-none bg-white p-4 text-sm placeholder:text-[#617589] focus:ring-0 dark:bg-[#1a242d]"
-                placeholder="공지 내용을 상세히 입력해주세요. 이미지 및 링크 첨부가 가능합니다."
+                placeholder={contentPlaceholder}
               />
             </div>
           </div>
@@ -975,7 +982,7 @@ function NoticeModal({
               <span className="material-symbols-outlined text-[18px]">
                 event_available
               </span>
-              예약 설정 완료
+              발송 설정 완료
             </button>
           </div>
         </div>

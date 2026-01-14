@@ -19,6 +19,7 @@ type AssistantRecord = {
   avatar: string;
   subject: string;
   phone: string;
+  email: string;
   className: string;
   recentTask: string;
   rating: string;
@@ -269,6 +270,21 @@ export function AssistantManagementClientPage() {
                     </div>
                   </>
                 );
+                if (card.href) {
+                  return (
+                    <Link
+                      key={card.label}
+                      href={card.href}
+                      className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-6 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg dark:border-slate-800 dark:bg-[#1c2936]"
+                    >
+                      {cardBody}
+                      <span className="text-xs font-semibold text-primary">
+                        업무 지시 내역 보기
+                      </span>
+                    </Link>
+                  );
+                }
+
                 if (isInteractive) {
                   return (
                     <button
@@ -690,6 +706,17 @@ function AssistantDetailModal({
               />
             </label>
             <label className="flex flex-col gap-1 text-sm font-medium text-slate-500 dark:text-slate-400">
+              이메일
+              <input
+                type="email"
+                value={formState.email}
+                onChange={(event) =>
+                  handleFieldChange("email", event.target.value)
+                }
+                className="rounded-lg border border-slate-300 px-3 py-2 text-base text-slate-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm font-medium text-slate-500 dark:text-slate-400">
               담당 과목
               <input
                 type="text"
@@ -1034,6 +1061,7 @@ function mapAssistantEntityToRecord(
     avatar: assistant.avatarUrl ?? fallbackAvatar,
     subject: assistant.subject,
     phone: assistant.phone,
+    email: assistant.email ?? `${assistant.id}@academy.com`,
     className: assistant.className,
     recentTask:
       assistant.recentTask && assistant.recentTask.trim()
@@ -1105,6 +1133,13 @@ function buildMetricCards(
       delta: `미제출 ${pendingContracts}건`,
       icon: "description",
       interactive: true,
+    },
+    {
+      label: "업무 지시 내역",
+      value: "128건",
+      delta: "이번 주 +12건",
+      icon: "assignment_turned_in",
+      href: "/assistant-task-list",
     },
   ];
 }

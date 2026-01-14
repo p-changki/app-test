@@ -39,14 +39,7 @@ type TimelineEntryData = {
   visibility?: InquiryMessage["visibility"];
 };
 
-type AssigneeOption = {
-  name: string;
-  role: string;
-  initials: string;
-};
-
 const STATUS_FLOW: InquiryStatus[] = [
-  "조교 이관",
   "강사 검토",
   "답변 완료",
   "학생/학부모 확인 완료",
@@ -54,12 +47,6 @@ const STATUS_FLOW: InquiryStatus[] = [
 ];
 
 const STATUS_OPTIONS: StatusOption[] = [
-  {
-    value: "조교 이관",
-    label: "조교 이관",
-    textClass: "text-[#e73908]",
-    dotClass: "bg-[#e73908]",
-  },
   {
     value: "강사 검토",
     label: "강사 검토",
@@ -84,13 +71,6 @@ const STATUS_OPTIONS: StatusOption[] = [
     textClass: "text-[#617589]",
     dotClass: "bg-[#617589]",
   },
-];
-
-const ASSIGNEES: AssigneeOption[] = [
-  { name: "박조교 (운영지원)", role: "운영지원", initials: "조" },
-  { name: "강호진 조교 (학습지원)", role: "학습지원", initials: "HJ" },
-  { name: "민소희 조교 (상담)", role: "상담", initials: "MS" },
-  { name: "이도현 조교 (시험)", role: "시험", initials: "DH" },
 ];
 
 const QUICK_ACTIONS = [{ label: "학생 문의 복사", icon: "share" }] as const;
@@ -227,9 +207,6 @@ export function InquiryDetailPage({ inquiryId }: { inquiryId: string }) {
   const inquiry = useInquiryById(inquiryId);
   const status = inquiry?.status ?? "강사 검토";
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
-  const [assigneeOverride, setAssigneeOverride] =
-    useState<AssigneeOption | null>(null);
-  const [assigneeModalOpen, setAssigneeModalOpen] = useState(false);
   const [answerModalOpen, setAnswerModalOpen] = useState(false);
   const [answerDraft, setAnswerDraft] = useState("");
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
@@ -243,6 +220,7 @@ export function InquiryDetailPage({ inquiryId }: { inquiryId: string }) {
     null
   );
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const [answerRole, setAnswerRole] = useState<InquiryActor>("instructor");
   const feedbackTimerRef = useRef<number | null>(null);
   const editorRef = useRef<HTMLDivElement | null>(null);
   const answerHtmlRef = useRef<string>(DEFAULT_ANSWER_HTML);
@@ -312,20 +290,6 @@ export function InquiryDetailPage({ inquiryId }: { inquiryId: string }) {
     editorRef.current.focus();
   }, [answerModalOpen]);
 
-  const defaultAssignee = (() => {
-    if (!inquiry?.assistant) return ASSIGNEES[0];
-    const matched = ASSIGNEES.find((option) =>
-      inquiry.assistant?.name.includes(option.name.split(" ")[0])
-    );
-    if (matched) return matched;
-    return {
-      name: inquiry.assistant.name,
-      role: inquiry.assistant.name,
-      initials: inquiry.assistant.initials,
-    };
-  })();
-  const assignee = assigneeOverride ?? defaultAssignee;
-
   const showFeedback = (message: string) => {
     setFeedbackMessage(message);
     if (feedbackTimerRef.current) {
@@ -377,23 +341,6 @@ export function InquiryDetailPage({ inquiryId }: { inquiryId: string }) {
     });
   };
 
-  const handleAssigneeChange = (nextAssignee: AssigneeOption) => {
-    if (!inquiry) return;
-    if (nextAssignee.name === assignee.name) {
-      setAssigneeModalOpen(false);
-      return;
-    }
-    setAssigneeOverride(nextAssignee);
-    setAssigneeModalOpen(false);
-    showFeedback("담당자가 변경되었습니다.");
-    addInquiryMessage(inquiry.id, {
-      role: "instructor",
-      author: "이강사 (본인)",
-      content: `담당자를 ${nextAssignee.name}(으)로 변경했습니다.`,
-      visibility: "staff",
-    });
-  };
-
   const openAnswerModal = (preset?: string) => {
     if (preset) {
       setAnswerContent(preset);
@@ -415,9 +362,11 @@ export function InquiryDetailPage({ inquiryId }: { inquiryId: string }) {
     setAnswerModalOpen(false);
     setAnswerDraft("");
     showFeedback("답변이 등록되었습니다.");
+    const responder =
+      answerRole === "assistant" ? "조교 담당자" : "강사 담당자";
     addInquiryMessage(inquiry.id, {
-      role: "instructor",
-      author: "이강사 (책임)",
+      role: answerRole,
+      author: responder,
       content: nextContent,
       visibility: visibleToParents ? "all" : "staff",
       changesStatus:
@@ -491,7 +440,7 @@ export function InquiryDetailPage({ inquiryId }: { inquiryId: string }) {
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2 text-sm text-[#617589] dark:text-gray-400">
             <Link className="hover:text-primary" href="/inquiry-dashboard">
-              문의 관리
+              소통
             </Link>
             <span className="material-symbols-outlined text-xs">
               chevron_right
@@ -655,29 +604,6 @@ export function InquiryDetailPage({ inquiryId }: { inquiryId: string }) {
                     </div>
                   </div>
                 </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-semibold text-[#617589]">
-                    현재 담당자
-                  </label>
-                  <button
-                    type="button"
-                    className="flex items-center justify-between rounded-lg border border-[#dbe0e6] bg-[#f0f2f4] px-3 py-2 text-sm font-medium dark:border-gray-700 dark:bg-gray-800"
-                    onClick={() => setAssigneeModalOpen(true)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="flex size-5 items-center justify-center rounded-full bg-primary/20 text-[10px] font-bold text-primary">
-                        {assignee.initials}
-                      </div>
-                      <span>{assignee.name}</span>
-                    </div>
-                    <span className="material-symbols-outlined text-gray-400">
-                      expand_more
-                    </span>
-                  </button>
-                  <p className="text-[10px] text-[#617589]">
-                    * 책임 강사는 담당자를 언제든 변경할 수 있습니다.
-                  </p>
-                </div>
                 <div className="space-y-4 border-t border-[#dbe0e6] pt-4 dark:border-gray-700">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-[#617589]">현재 상태</span>
@@ -731,7 +657,7 @@ export function InquiryDetailPage({ inquiryId }: { inquiryId: string }) {
                 <span className="material-symbols-outlined text-sm">
                   verified_user
                 </span>
-                책임 강사 (Full Control)
+                강사/조교 공통
               </span>
             </div>
             {feedbackMessage ? (
@@ -779,16 +705,6 @@ export function InquiryDetailPage({ inquiryId }: { inquiryId: string }) {
             </div>
             <button
               type="button"
-              className="flex items-center gap-2 rounded-lg border border-[#dbe0e6] px-5 py-2 text-sm font-bold text-[#111418] hover:bg-gray-50 dark:text-white"
-              onClick={() => setAssigneeModalOpen(true)}
-            >
-              <span className="material-symbols-outlined text-lg">
-                person_add
-              </span>
-              담당자 재지정
-            </button>
-            <button
-              type="button"
               className="rounded-lg bg-primary px-8 py-2 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:bg-primary/90"
               onClick={() => openAnswerModal()}
             >
@@ -800,59 +716,6 @@ export function InquiryDetailPage({ inquiryId }: { inquiryId: string }) {
           </div>
         </div>
       </footer>
-      <Modal
-        open={assigneeModalOpen}
-        onClose={() => setAssigneeModalOpen(false)}
-        ariaLabel="담당자 재지정"
-      >
-        <div className="flex items-center justify-between border-b border-[#dbe0e6] px-6 py-4 dark:border-gray-700">
-          <div>
-            <p className="text-xs font-semibold text-[#617589]">
-              담당자 재지정
-            </p>
-            <h3 className="text-lg font-bold text-[#111418] dark:text-white">
-              담당자 선택
-            </h3>
-          </div>
-          <button
-            type="button"
-            className="rounded-full p-2 text-[#617589] transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
-            onClick={() => setAssigneeModalOpen(false)}
-            aria-label="담당자 재지정 모달 닫기"
-          >
-            <span className="material-symbols-outlined text-lg">close</span>
-          </button>
-        </div>
-        <div className="px-6 py-4">
-          <div className="space-y-2">
-            {ASSIGNEES.map((option) => (
-              <button
-                key={option.name}
-                type="button"
-                className="flex w-full items-center justify-between rounded-lg border border-[#dbe0e6] bg-white px-4 py-3 text-left transition hover:bg-gray-50 dark:border-gray-700 dark:bg-[#1a242d] dark:hover:bg-gray-800"
-                onClick={() => handleAssigneeChange(option)}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-                    {option.initials}
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-[#111418] dark:text-white">
-                      {option.name}
-                    </p>
-                    <p className="text-[11px] text-[#617589]">{option.role}</p>
-                  </div>
-                </div>
-                {assignee.name === option.name ? (
-                  <span className="material-symbols-outlined text-primary">
-                    check
-                  </span>
-                ) : null}
-              </button>
-            ))}
-          </div>
-        </div>
-      </Modal>
       <Modal
         open={answerModalOpen}
         onClose={() => setAnswerModalOpen(false)}
@@ -894,6 +757,22 @@ export function InquiryDetailPage({ inquiryId }: { inquiryId: string }) {
                     {inquiry.category}
                   </span>
                 </div>
+                <span className="hidden h-3 w-px bg-gray-300 md:block" />
+                <label className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-[#617589]">
+                    답변자:
+                  </span>
+                  <select
+                    value={answerRole}
+                    onChange={(event) =>
+                      setAnswerRole(event.target.value as InquiryActor)
+                    }
+                    className="rounded-md border border-[#dbe0e6] bg-white px-2 py-1 text-xs font-semibold text-[#111418] shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-[#1f2a37] dark:text-white"
+                  >
+                    <option value="instructor">강사</option>
+                    <option value="assistant">조교</option>
+                  </select>
+                </label>
               </div>
             </div>
           </div>

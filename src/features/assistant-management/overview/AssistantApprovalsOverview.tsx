@@ -47,6 +47,20 @@ export function AssistantApprovalsOverview() {
 }
 
 function PageHeader() {
+  const [inviteCode, setInviteCode] = useState<string>("");
+
+  const generateInviteCode = () => {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    const code = Array.from(
+      { length: 8 },
+      () => chars[Math.floor(Math.random() * chars.length)]
+    )
+      .join("")
+      .replace(/(.{4})/g, "$1-")
+      .replace(/-$/, "");
+    setInviteCode(code);
+  };
+
   return (
     <section className="space-y-1 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-[#1a2632]">
       <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
@@ -80,12 +94,26 @@ function PageHeader() {
             </NavButton>
           </div>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <button
+              type="button"
+              onClick={generateInviteCode}
+              className="flex items-center justify-center gap-2 rounded-lg border border-primary/30 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/15 dark:border-primary/40 dark:bg-primary/20 dark:text-primary"
+            >
+              <span className={iconClass("text-base")}>key</span>
+              인증 코드 생성
+            </button>
             <button className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
               <span className={iconClass("text-base")}>link</span>
               가입 링크 복사
             </button>
           </div>
         </div>
+        {inviteCode ? (
+          <div className="mt-3 flex items-center gap-2 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 dark:border-blue-900/40 dark:bg-blue-900/20 dark:text-blue-200">
+            <span className={iconClass("text-[16px]")}>verified</span>
+            인증 코드: {inviteCode}
+          </div>
+        ) : null}
       </div>
     </section>
   );

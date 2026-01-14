@@ -17,7 +17,7 @@ export function ExamRegistrationHeader({
             "text-3xl font-black text-slate-900 dark:text-white md:text-4xl"
           )}
         >
-          시험/과제 제작
+          시험 등록/수정
         </h1>
         <p className="text-base text-slate-500 dark:text-slate-400">
           시험지를 등록하고 문항별 상세 정답 및 배점을 설정합니다. 등록된 정보는

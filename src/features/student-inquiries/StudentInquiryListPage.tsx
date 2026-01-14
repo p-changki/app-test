@@ -14,11 +14,6 @@ const STATUS_META: Record<
   InquiryStatus,
   { label: string; badgeClass: string; tabKey: TabKey }
 > = {
-  "조교 이관": {
-    label: "대기 중",
-    badgeClass: "bg-slate-100 text-slate-500",
-    tabKey: "waiting",
-  },
   "강사 검토": {
     label: "처리 중",
     badgeClass: "bg-amber-100 text-amber-700",
@@ -120,8 +115,7 @@ export function StudentInquiryListPage() {
                 내 문의 내역
               </p>
               <p className="text-[#617589] text-base font-normal">
-                담당 강사 및 행정실과 주고받은 모든 1:1 문의를 확인하실 수
-                있습니다.
+                강사/조교와 주고받은 모든 1:1 문의를 확인하실 수 있습니다.
               </p>
             </div>
             <button
@@ -188,7 +182,7 @@ export function StudentInquiryListPage() {
                       상태
                     </th>
                     <th className="px-6 py-4 text-xs font-bold text-[#617589] uppercase tracking-wider w-48">
-                      담당자
+                      담당 강사
                     </th>
                     <th className="px-6 py-4 text-xs font-bold text-[#617589] uppercase tracking-wider w-48">
                       최종 업데이트
@@ -197,19 +191,8 @@ export function StudentInquiryListPage() {
                 </thead>
                 <tbody className="divide-y divide-[#dbe0e6] dark:divide-slate-800">
                   {filtered.map(({ inquiry, meta }) => {
-                    const assigneeName =
-                      inquiry.assistant?.name ?? inquiry.instructor.name;
-                    const assigneeInitial =
-                      inquiry.assistant?.initials ?? assigneeName.slice(0, 1);
-                    const initialMessage = inquiry.messages.find(
-                      (message) => message.kind === "initial"
-                    );
-                    const shareLabel =
-                      initialMessage?.role === "assistant"
-                        ? "조교 공유"
-                        : initialMessage?.role === "instructor"
-                          ? "강사 공유"
-                          : null;
+                    const assigneeName = inquiry.instructor.name;
+                    const assigneeInitial = assigneeName.slice(0, 1);
                     const isResourceShare = inquiry.category === "자료 공유";
                     return (
                       <tr
@@ -229,21 +212,11 @@ export function StudentInquiryListPage() {
                                 {inquiry.title}
                               </span>
                             </div>
-                            {isResourceShare || shareLabel ? (
+                            {isResourceShare ? (
                               <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-500">
-                                {isResourceShare && shareLabel ? (
-                                  <span className="rounded-full bg-slate-200 px-2 py-0.5 text-slate-700">
-                                    자료 수신 전용
-                                  </span>
-                                ) : null}
                                 {isResourceShare ? (
                                   <span className="rounded-full bg-blue-100 px-2 py-0.5 text-blue-700">
                                     자료 공유
-                                  </span>
-                                ) : null}
-                                {shareLabel ? (
-                                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-600">
-                                    {shareLabel}
                                   </span>
                                 ) : null}
                               </div>

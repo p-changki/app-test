@@ -31,6 +31,16 @@ type RetestSchedule = {
   status?: "pending" | "approved";
 };
 
+type ExamSchedule = {
+  id: string;
+  subject: string;
+  title: string;
+  date: string;
+  time: string;
+  location: string;
+  teacher: string;
+};
+
 const scheduleEvents: ScheduleEvent[] = [
   {
     id: "math-mon",
@@ -108,6 +118,36 @@ const scheduleEvents: ScheduleEvent[] = [
   },
 ];
 
+const examSchedules: ExamSchedule[] = [
+  {
+    id: "exam-mid-math",
+    subject: "수학",
+    title: "중간고사 (함수 단원)",
+    date: "2024-03-14",
+    time: "19:00 - 20:30",
+    location: "301호",
+    teacher: "김철수 T",
+  },
+  {
+    id: "exam-eng",
+    subject: "영어",
+    title: "독해 평가 테스트",
+    date: "2024-03-19",
+    time: "18:00 - 19:00",
+    location: "202호",
+    teacher: "박영희 T",
+  },
+  {
+    id: "exam-sci",
+    subject: "과학",
+    title: "실험 보고서 평가",
+    date: "2024-03-22",
+    time: "17:30 - 19:00",
+    location: "실험실 3",
+    teacher: "최과학 T",
+  },
+];
+
 const retestSchedules: RetestSchedule[] = [
   {
     id: "retest-math",
@@ -145,7 +185,7 @@ const acceptedRetests: RetestSchedule[] = [
   {
     id: "retest-approved-math",
     subject: "수학",
-    title: "수학 심화 재시험 (승인)",
+    title: "수학 심화 재시험",
     date: "2024-03-12",
     time: "19:00 - 20:30",
     location: "재시험실 2",
@@ -154,14 +194,14 @@ const acceptedRetests: RetestSchedule[] = [
   },
 ];
 
-const allRetestSchedules: RetestSchedule[] = [
+export const allRetestSchedules: RetestSchedule[] = [
   ...retestSchedules,
   ...acceptedRetests,
 ];
 
 const subjectOptions = ["전체", "수학", "영어", "과학", "국어"];
-const hourHeight = 96;
-const startHour = 13;
+const hourHeight = 72;
+const startHour = 11;
 
 const availableYears = Array.from(
   new Set(scheduleEvents.map((event) => new Date(event.date).getFullYear()))
@@ -177,11 +217,9 @@ export function StudentClassesSchedule() {
   const [selectedEventId, setSelectedEventId] = useState(
     scheduleEvents[0]?.id ?? ""
   );
-  const [detailEventId, setDetailEventId] = useState<string | null>(null);
   const [weekStart, setWeekStart] = useState(initialWeekStart);
   const [viewMode, setViewMode] = useState<"week" | "day">("week");
   const [selectedDay, setSelectedDay] = useState<Date>(initialWeekStart);
-  const [retestModalId, setRetestModalId] = useState<string | null>(null);
   const [retestListOpen, setRetestListOpen] = useState(false);
   const [selectedYear, setSelectedYear] = useState(initialDate.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(
@@ -210,32 +248,17 @@ export function StudentClassesSchedule() {
     return filteredEvents[0]?.id ?? "";
   }, [filteredEvents, selectedEventId]);
 
-  const selectedEvent =
-    filteredEvents.find((event) => event.id === activeEventId) ??
-    filteredEvents[0] ??
-    null;
-  const detailEvent =
-    filteredEvents.find((event) => event.id === detailEventId) ??
-    scheduleEvents.find((event) => event.id === detailEventId) ??
-    null;
-
-  const upcomingEvents = useMemo(() => {
-    return filteredEvents
-      .map((event) => ({
-        ...event,
-        sortValue: new Date(`${event.date}T${event.start}:00`).getTime(),
+  const upcomingExams = useMemo(() => {
+    return examSchedules
+      .map((schedule) => ({
+        ...schedule,
+        sortValue: new Date(
+          `${schedule.date}T${getTimeRange(schedule.time).start}:00`
+        ).getTime(),
       }))
       .sort((a, b) => a.sortValue - b.sortValue)
       .slice(0, 3);
-  }, [filteredEvents]);
-
-  const today = new Date();
-  const highlightDate =
-    viewMode === "day"
-      ? selectedDay
-      : isWithinWeek(today, weekStart)
-        ? today
-        : null;
+  }, []);
 
   const getMonthsForYear = (year: number) => {
     const months = scheduleEvents
@@ -277,11 +300,15 @@ export function StudentClassesSchedule() {
     syncWeekStart(getStartOfWeek(baseDate), baseDate);
   };
 
-  const dailyClasses = useMemo(() => {
-    return filteredEvents
-      .filter((event) => isSameDay(new Date(event.date), selectedDay))
-      .sort((a, b) => timeToMinutes(a.start) - timeToMinutes(b.start));
-  }, [filteredEvents, selectedDay]);
+  const dailyExams = useMemo(() => {
+    return examSchedules
+      .filter((schedule) => isSameDay(new Date(schedule.date), selectedDay))
+      .sort(
+        (a, b) =>
+          timeToMinutes(getTimeRange(a.time).start) -
+          timeToMinutes(getTimeRange(b.time).start)
+      );
+  }, [selectedDay]);
   const dailyRetests = useMemo(() => {
     return allRetestSchedules
       .filter((schedule) => isSameDay(new Date(schedule.date), selectedDay))
@@ -291,11 +318,6 @@ export function StudentClassesSchedule() {
           timeToMinutes(getTimeRange(b.time).start)
       );
   }, [selectedDay]);
-
-  const selectedRetest = retestModalId
-    ? (allRetestSchedules.find((schedule) => schedule.id === retestModalId) ??
-      null)
-    : null;
 
   return (
     <div
@@ -314,7 +336,7 @@ export function StudentClassesSchedule() {
                   "text-2xl font-bold text-[color:var(--surface-text)] sm:text-3xl"
                 )}
               >
-                나의 수업 시간표
+                수업 스케줄
               </h1>
               <p className="text-sm text-[color:var(--surface-text-muted)]">
                 {formatWeekRange(weekStart)} • {selectedYear}년 {selectedMonth}
@@ -514,7 +536,7 @@ export function StudentClassesSchedule() {
                   <div className="flex flex-col gap-1 border-b border-[color:var(--surface-border)] p-6 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="text-xs font-semibold uppercase text-[color:var(--surface-text-muted)]">
-                        주간 캘린더
+                        수업 시간표
                       </p>
                       <p className="text-lg font-bold text-[color:var(--surface-text)]">
                         {formatWeekRange(weekStart)}
@@ -526,49 +548,22 @@ export function StudentClassesSchedule() {
                         : "수업 일정 없음"}
                     </span>
                   </div>
-                  <div className="grid grid-cols-[60px_repeat(7,1fr)] divide-x divide-[color:var(--surface-border)] border-b border-[color:var(--surface-border)] bg-[color:var(--surface-background)]">
+                  <div className="grid grid-cols-[60px_repeat(7,1fr)] divide-x divide-[color:var(--surface-border)] border-b border-[color:var(--surface-border)] bg-[#f7c6cf] text-slate-900 dark:bg-[#2b1f2b] dark:text-slate-100">
                     <div className="p-3" />
-                    {weekDays.map((date) => {
-                      const isActiveDay = highlightDate
-                        ? isSameDay(date, highlightDate)
-                        : false;
-                      return (
-                        <div
-                          key={date.toISOString()}
-                          className={cn(
-                            "p-3 text-center",
-                            isActiveDay && "bg-primary/5 dark:bg-primary/10"
-                          )}
-                        >
-                          <span
-                            className={cn(
-                              "block text-xs font-semibold uppercase",
-                              isActiveDay
-                                ? "text-primary"
-                                : "text-[color:var(--surface-text-muted)]"
-                            )}
-                          >
-                            {weekdayLabel(date)}
-                          </span>
-                          {isActiveDay ? (
-                            <div className="mx-auto mt-1 flex size-8 items-center justify-center rounded-full bg-primary text-base font-bold text-white shadow">
-                              {date.getDate()}
-                            </div>
-                          ) : (
-                            <span className="block text-lg font-bold text-[color:var(--surface-text)]">
-                              {date.getDate()}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
+                    {weekDays.map((date) => (
+                      <div key={date.toISOString()} className="p-3 text-center">
+                        <span className="block text-sm font-bold">
+                          {weekdayLabel(date)}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                   <div className="grid grid-cols-[60px_repeat(7,1fr)] divide-x divide-[color:var(--surface-border)]">
                     <div>
                       {Array.from({ length: timeSlots.length }, (_, index) => (
                         <div
                           key={`slot-${index}`}
-                          className="flex h-[96px] items-start justify-center border-b border-[color:var(--surface-border)] pt-2 text-xs font-medium text-[color:var(--surface-text-muted)]"
+                          className="flex h-[72px] items-start justify-center border-b border-[color:var(--surface-border)] pt-2 text-xs font-medium text-[color:var(--surface-text-muted)]"
                         >
                           {timeSlots[index]}
                         </div>
@@ -577,9 +572,6 @@ export function StudentClassesSchedule() {
                     {weekDays.map((date) => {
                       const classEvents = filteredEvents.filter((event) =>
                         isSameDay(new Date(event.date), date)
-                      );
-                      const retestEvents = allRetestSchedules.filter(
-                        (schedule) => isSameDay(new Date(schedule.date), date)
                       );
                       return (
                         <div
@@ -594,7 +586,7 @@ export function StudentClassesSchedule() {
                             (_, index) => (
                               <div
                                 key={`grid-${index}`}
-                                className="pointer-events-none h-[96px] border-b border-dashed border-[color:var(--surface-border)]"
+                                className="pointer-events-none h-[72px] border-b border-[color:var(--surface-border)]"
                               />
                             )
                           )}
@@ -639,56 +631,7 @@ export function StudentClassesSchedule() {
                               </button>
                             );
                           })}
-                          {retestEvents.map((schedule) => {
-                            const { start, end } = getTimeRange(schedule.time);
-                            const { top, height } = computePlacement(
-                              start,
-                              end
-                            );
-                            const isApproved = schedule.status === "approved";
-                            const colorBase = isApproved
-                              ? "border-green-500 bg-green-50 text-green-900 hover:border-green-600 focus-visible:ring-green-300 dark:bg-green-900/20"
-                              : "border-red-500 bg-red-50 text-red-900 hover:border-red-600 focus-visible:ring-red-300 dark:bg-red-900/20";
-                            const chipColor = isApproved
-                              ? "bg-green-100 text-green-700"
-                              : "bg-red-100 text-red-700";
-                            return (
-                              <button
-                                key={`retest-${schedule.id}`}
-                                type="button"
-                                style={{ top, height }}
-                                className={cn(
-                                  "absolute left-1 right-1 rounded border-l-4 p-3 text-left shadow-sm transition focus-visible:outline-none focus-visible:ring-2",
-                                  colorBase
-                                )}
-                                onClick={() => setRetestModalId(schedule.id)}
-                              >
-                                <span
-                                  className={cn(
-                                    "rounded px-1.5 py-0.5 text-xs font-semibold",
-                                    chipColor
-                                  )}
-                                >
-                                  {isApproved ? "승인된 재시험" : "재시험"}
-                                </span>
-                                <p className="mt-1 text-sm font-bold">
-                                  {schedule.title}
-                                </p>
-                                <div className="mt-2 space-y-1 text-xs opacity-80">
-                                  <ScheduleItem
-                                    icon="schedule"
-                                    label={schedule.time}
-                                  />
-                                  <ScheduleItem
-                                    icon="meeting_room"
-                                    label={schedule.location}
-                                  />
-                                </div>
-                              </button>
-                            );
-                          })}
-                          {classEvents.length === 0 &&
-                          retestEvents.length === 0 ? (
+                          {classEvents.length === 0 ? (
                             <div className="absolute inset-0 flex items-center justify-center text-xs text-[color:var(--surface-text-muted)]">
                               일정 없음
                             </div>
@@ -711,51 +654,49 @@ export function StudentClassesSchedule() {
                     </div>
                     <div className="flex flex-col gap-2 sm:items-end">
                       <span className="text-sm font-medium text-[color:var(--surface-text-muted)]">
-                        수업 {dailyClasses.length}개 · 재시험{" "}
+                        시험 {dailyExams.length}개 · 재시험{" "}
                         {dailyRetests.length}개
                       </span>
                     </div>
                   </div>
                   <div className="divide-y divide-[color:var(--surface-border)]">
-                    {dailyClasses.length === 0 && dailyRetests.length === 0 ? (
+                    {dailyExams.length === 0 && dailyRetests.length === 0 ? (
                       <p className="px-6 py-10 text-center text-sm text-[color:var(--surface-text-muted)]">
                         선택한 날짜에 예정된 일정이 없습니다.
                       </p>
                     ) : (
                       <>
-                        {dailyClasses.map((event) => (
-                          <button
-                            key={`daily-${event.id}`}
-                            type="button"
-                            className="flex w-full flex-col gap-2 px-6 py-4 text-left transition hover:bg-[color:var(--surface-background)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-                            onClick={() => setSelectedEventId(event.id)}
+                        {dailyExams.map((schedule) => (
+                          <div
+                            key={`daily-exam-${schedule.id}`}
+                            className="flex w-full flex-col gap-2 px-6 py-4 text-left"
                           >
                             <div className="flex flex-wrap items-center justify-between gap-2">
-                              <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                                {event.subject}
+                              <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-200">
+                                시험
                               </span>
                               <span className="text-xs font-medium text-[color:var(--surface-text-muted)]">
                                 {selectedYear}년 {selectedMonth}월
                               </span>
                             </div>
                             <h4 className="text-base font-bold text-[color:var(--surface-text)]">
-                              {event.title}
+                              {schedule.title}
                             </h4>
                             <div className="flex flex-wrap gap-4 text-sm text-[color:var(--surface-text-muted)]">
                               <ScheduleItem
                                 icon="schedule"
-                                label={`${event.start} - ${event.end}`}
+                                label={schedule.time}
                               />
                               <ScheduleItem
                                 icon="meeting_room"
-                                label={event.location}
+                                label={schedule.location}
                               />
                               <ScheduleItem
                                 icon="person"
-                                label={event.teacher}
+                                label={schedule.teacher}
                               />
                             </div>
-                          </button>
+                          </div>
                         ))}
                         {dailyRetests.length > 0 ? (
                           <div className="bg-[color:var(--surface-background)] px-6 py-4">
@@ -779,18 +720,14 @@ export function StudentClassesSchedule() {
                                   ? "bg-green-100 text-green-700"
                                   : "bg-red-100 text-red-700";
                                 return (
-                                  <button
+                                  <div
                                     key={`daily-retest-${schedule.id}`}
-                                    type="button"
                                     className={cn(
-                                      "flex w-full flex-col rounded-xl border bg-white px-4 py-3 text-left text-sm shadow-sm transition hover:border-opacity-70 focus-visible:outline-none",
+                                      "flex w-full flex-col rounded-xl border bg-white px-4 py-3 text-left text-sm shadow-sm transition hover:border-opacity-70",
                                       borderColor,
                                       textColor,
                                       ringColor
                                     )}
-                                    onClick={() =>
-                                      setRetestModalId(schedule.id)
-                                    }
                                   >
                                     <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                                       <span className="font-semibold">
@@ -802,7 +739,7 @@ export function StudentClassesSchedule() {
                                           badgeColor
                                         )}
                                       >
-                                        {isApproved ? "승인됨" : "신청 가능"}
+                                        {isApproved ? "클리닉" : "재시험"}
                                       </span>
                                     </div>
                                     <h4 className="text-base font-bold">
@@ -818,7 +755,7 @@ export function StudentClassesSchedule() {
                                         label={schedule.location}
                                       />
                                     </div>
-                                  </button>
+                                  </div>
                                 );
                               })}
                             </div>
@@ -831,118 +768,91 @@ export function StudentClassesSchedule() {
               )}
               <aside className="w-full rounded-2xl border border-[color:var(--surface-border)] bg-[var(--surface-panel)] p-6 shadow-sm lg:w-80">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold">상세 정보</h3>
-                  <button
-                    type="button"
-                    className="text-[color:var(--surface-text-muted)] hover:text-primary"
-                  >
-                    <span className={iconClass()}>more_horiz</span>
-                  </button>
+                  <h3 className="text-lg font-bold">시험 일정</h3>
+                  <span className="text-[11px] font-semibold text-[color:var(--surface-text-muted)]">
+                    {examSchedules.length}개
+                  </span>
                 </div>
-                {selectedEvent ? (
-                  <div className="mt-4 space-y-4">
-                    <div className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-background)] p-4">
-                      <div className="flex items-center gap-3">
-                        <span
-                          className={cn(
-                            "flex size-10 items-center justify-center rounded-xl text-[20px]",
-                            getEventBadge(selectedEvent.accent)
-                          )}
-                        >
-                          <span className={iconClass()}>calendar_month</span>
-                        </span>
-                        <div>
-                          <p className="text-xs font-medium text-[color:var(--surface-text-muted)]">
-                            {selectedEvent.subject}
-                          </p>
-                          <p className="text-base font-bold">
-                            {selectedEvent.title}
-                          </p>
+                {upcomingExams.length === 0 ? (
+                  <p className="mt-4 text-xs text-[color:var(--surface-text-muted)]">
+                    예정된 시험이 없습니다.
+                  </p>
+                ) : (
+                  <div className="mt-4 space-y-3">
+                    {upcomingExams.map((schedule) => (
+                      <div
+                        key={`upcoming-exam-${schedule.id}`}
+                        className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900 shadow-sm dark:border-blue-900/40 dark:bg-blue-900/20 dark:text-blue-100"
+                      >
+                        <div className="flex items-center justify-between text-xs font-semibold">
+                          <span>{schedule.subject}</span>
+                          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-200">
+                            시험
+                          </span>
+                        </div>
+                        <p className="mt-1 text-base font-bold">
+                          {schedule.title}
+                        </p>
+                        <div className="mt-2 space-y-1 text-xs">
+                          <ScheduleItem icon="event" label={schedule.date} />
+                          <ScheduleItem icon="schedule" label={schedule.time} />
+                          <ScheduleItem
+                            icon="meeting_room"
+                            label={schedule.location}
+                          />
                         </div>
                       </div>
-                      <div className="mt-4 space-y-3 text-sm">
-                        <DetailRow
-                          icon="event"
-                          label={`${selectedEvent.date} (${weekdayLabel(new Date(selectedEvent.date))})`}
-                        />
-                        <DetailRow
-                          icon="schedule"
-                          label={`${selectedEvent.start} - ${selectedEvent.end}`}
-                        />
-                        <DetailRow
-                          icon="meeting_room"
-                          label={selectedEvent.location}
-                        />
-                        <DetailRow
-                          icon="person"
-                          label={selectedEvent.teacher}
-                        />
-                        {selectedEvent.notes ? (
-                          <DetailRow
-                            icon="assignment"
-                            label={selectedEvent.notes}
-                          />
-                        ) : null}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      className="w-full rounded-lg border border-[color:var(--surface-border)] bg-[var(--surface-panel)] py-2 text-sm font-semibold text-[color:var(--surface-text)] transition hover:bg-[color:var(--surface-border)]/30"
-                      onClick={() => setDetailEventId(selectedEvent.id)}
-                    >
-                      상세 페이지 이동
-                    </button>
+                    ))}
                   </div>
-                ) : (
-                  <p className="mt-6 text-sm text-[color:var(--surface-text-muted)]">
-                    조건에 맞는 수업이 없습니다.
-                  </p>
                 )}
                 <div className="mt-8 space-y-4">
-                  <h4 className="text-sm font-bold">다가오는 일정</h4>
-                  {upcomingEvents.length === 0 ? (
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-bold">재시험 일정</h4>
+                    <span className="text-[11px] font-semibold text-[color:var(--surface-text-muted)]">
+                      {retestSchedules.length}개
+                    </span>
+                  </div>
+                  {retestSchedules.length === 0 ? (
                     <p className="text-xs text-[color:var(--surface-text-muted)]">
-                      예정된 수업이 없습니다.
+                      재시험 일정이 없습니다.
                     </p>
                   ) : (
-                    upcomingEvents.map((event) => (
-                      <button
-                        key={`upcoming-${event.id}`}
-                        type="button"
-                        className="flex w-full items-center gap-3 rounded-xl border border-transparent p-3 text-left transition hover:border-[color:var(--surface-border)]"
-                        onClick={() => setSelectedEventId(event.id)}
+                    retestSchedules.map((schedule) => (
+                      <div
+                        key={`retest-card-${schedule.id}`}
+                        className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-900 shadow-sm dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-100"
                       >
-                        <div className="flex flex-col items-center justify-center rounded-lg bg-[color:var(--surface-background)] px-3 py-2 text-xs font-semibold">
-                          <span>{weekdayLabel(new Date(event.date))}</span>
-                          <span className="text-sm">{event.start}</span>
+                        <div className="flex items-center justify-between text-xs font-semibold">
+                          <span>{schedule.subject}</span>
+                          <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-700 dark:bg-red-900/40 dark:text-red-200">
+                            재시험
+                          </span>
                         </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-bold">{event.title}</p>
-                          <p className="text-xs text-[color:var(--surface-text-muted)]">
-                            {event.location} · {event.teacher}
-                          </p>
+                        <p className="mt-1 text-base font-bold">
+                          {schedule.title}
+                        </p>
+                        <div className="mt-2 space-y-1 text-xs">
+                          <ScheduleItem icon="event" label={schedule.date} />
+                          <ScheduleItem icon="schedule" label={schedule.time} />
+                          <ScheduleItem
+                            icon="meeting_room"
+                            label={schedule.location}
+                          />
                         </div>
-                        <span
-                          className={iconClass(
-                            "text-[color:var(--surface-text-muted)]"
-                          )}
-                        >
-                          chevron_right
-                        </span>
-                      </button>
+                      </div>
                     ))
                   )}
                 </div>
                 <div className="mt-8 space-y-4">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-bold">승인된 재시험</h4>
+                    <h4 className="text-sm font-bold">클리닉</h4>
                     <span className="text-[11px] font-semibold text-[color:var(--surface-text-muted)]">
                       {acceptedRetests.length}개
                     </span>
                   </div>
                   {acceptedRetests.length === 0 ? (
                     <p className="text-xs text-[color:var(--surface-text-muted)]">
-                      승인된 재시험 일정이 없습니다.
+                      클리닉 일정이 없습니다.
                     </p>
                   ) : (
                     acceptedRetests.map((schedule) => (
@@ -952,9 +862,6 @@ export function StudentClassesSchedule() {
                       >
                         <div className="flex items-center justify-between text-xs font-semibold">
                           <span>{schedule.subject}</span>
-                          <span className="text-green-600 dark:text-green-300">
-                            승인 완료
-                          </span>
                         </div>
                         <p className="mt-1 text-base font-bold">
                           {schedule.title}
@@ -976,42 +883,21 @@ export function StudentClassesSchedule() {
           </main>
         </div>
       </div>
-      {detailEvent ? (
-        <ClassDetailModal
-          event={detailEvent}
-          onClose={() => setDetailEventId(null)}
-        />
-      ) : null}
       {retestListOpen ? (
         <RetestListModal
           schedules={allRetestSchedules}
-          onSelect={(id) => {
-            setRetestModalId(id);
-            setRetestListOpen(false);
-          }}
           onClose={() => setRetestListOpen(false)}
-        />
-      ) : null}
-      {selectedRetest ? (
-        <RetestApplyModal
-          schedule={selectedRetest}
-          onClose={() => setRetestModalId(null)}
         />
       ) : null}
     </div>
   );
 }
 
-const timeSlots = [
-  "13:00",
-  "14:00",
-  "15:00",
-  "16:00",
-  "17:00",
-  "18:00",
-  "19:00",
-  "20:00",
-];
+const timeSlots = Array.from({ length: 12 }, (_, index) => {
+  const start = 11 + index;
+  const end = start + 1;
+  return `${start}:00 - ${end}:00`;
+});
 
 function parseTime(time: string) {
   const [hours, minutes] = time
@@ -1053,17 +939,6 @@ function getEventClasses(accent: ScheduleEvent["accent"]) {
   return accents[accent] ?? "border-primary bg-primary/10";
 }
 
-function getEventBadge(accent: ScheduleEvent["accent"]) {
-  const badges: Record<ScheduleEvent["accent"], string> = {
-    purple:
-      "bg-purple-100 text-purple-600 dark:bg-purple-900/20 dark:text-purple-300",
-    blue: "bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-300",
-    green:
-      "bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-300",
-  };
-  return badges[accent] ?? "bg-primary/10 text-primary";
-}
-
 function ScheduleItem({ icon, label }: { icon: string; label: string }) {
   return (
     <div className="flex items-center gap-1 text-xs text-[color:var(--surface-text-muted)]">
@@ -1073,83 +948,11 @@ function ScheduleItem({ icon, label }: { icon: string; label: string }) {
   );
 }
 
-function DetailRow({ icon, label }: { icon: string; label: string }) {
-  return (
-    <div className="flex items-center gap-2 text-sm text-[color:var(--surface-text)]">
-      <span
-        className={iconClass(
-          "text-[18px] text-[color:var(--surface-text-muted)]"
-        )}
-      >
-        {icon}
-      </span>
-      <span>{label}</span>
-    </div>
-  );
-}
-
-function ClassDetailModal({
-  event,
-  onClose,
-}: {
-  event: ScheduleEvent;
-  onClose: () => void;
-}) {
-  const date = new Date(event.date);
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-8">
-      <div className="w-full max-w-lg rounded-2xl border border-[color:var(--surface-border)] bg-[var(--surface-panel)] shadow-2xl">
-        <div className="flex items-center justify-between border-b border-[color:var(--surface-border)] px-6 py-4">
-          <div>
-            <p className="text-xs font-semibold text-[color:var(--surface-text-muted)]">
-              {event.subject}
-            </p>
-            <h3 className="text-xl font-bold text-[color:var(--surface-text)]">
-              {event.title}
-            </h3>
-          </div>
-          <button
-            type="button"
-            className="rounded-full p-2 text-[color:var(--surface-text-muted)] transition hover:bg-[color:var(--surface-border)]/30"
-            aria-label="수업 상세 모달 닫기"
-            onClick={onClose}
-          >
-            <span className={iconClass("text-lg")}>close</span>
-          </button>
-        </div>
-        <div className="space-y-4 px-6 py-6 text-sm">
-          <DetailRow
-            icon="calendar_today"
-            label={`${event.date} (${weekdayLabel(date)})`}
-          />
-          <DetailRow icon="schedule" label={`${event.start} - ${event.end}`} />
-          <DetailRow icon="meeting_room" label={event.location} />
-          <DetailRow icon="person" label={event.teacher} />
-          {event.notes ? (
-            <DetailRow icon="assignment" label={event.notes} />
-          ) : null}
-        </div>
-        <div className="border-t border-[color:var(--surface-border)] px-6 py-4 text-right">
-          <button
-            type="button"
-            className="rounded-lg border border-[color:var(--surface-border)] px-4 py-2 text-sm font-semibold text-[color:var(--surface-text)] transition hover:bg-[color:var(--surface-border)]/30"
-            onClick={onClose}
-          >
-            닫기
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function RetestListModal({
+export function RetestListModal({
   schedules,
-  onSelect,
   onClose,
 }: {
   schedules: RetestSchedule[];
-  onSelect: (id: string) => void;
   onClose: () => void;
 }) {
   return (
@@ -1177,16 +980,14 @@ function RetestListModal({
           <div className="space-y-3">
             {schedules.map((schedule) => {
               const isApproved = schedule.status === "approved";
-              const statusLabel = isApproved ? "승인됨" : "신청 가능";
+              const statusLabel = isApproved ? "클리닉" : "재시험";
               const statusClasses = isApproved
                 ? "bg-green-100 text-green-700"
                 : "bg-primary/10 text-primary";
               return (
-                <button
+                <div
                   key={`modal-retest-${schedule.id}`}
-                  type="button"
-                  className="flex w-full flex-col gap-2 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-background)] px-4 py-4 text-left transition hover:border-primary/40 hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-                  onClick={() => onSelect(schedule.id)}
+                  className="flex w-full flex-col gap-2 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-background)] px-4 py-4 text-left transition hover:border-primary/40 hover:shadow"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-semibold">
                     <span className="rounded-full bg-[color:var(--surface-panel)] px-2.5 py-0.5 text-[color:var(--surface-text)]">
@@ -1213,141 +1014,11 @@ function RetestListModal({
                     />
                     <ScheduleItem icon="person" label={schedule.teacher} />
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function RetestApplyModal({
-  schedule,
-  onClose,
-}: {
-  schedule: RetestSchedule;
-  onClose: () => void;
-}) {
-  const [preferredSchedule, setPreferredSchedule] = useState("");
-  const [notes, setNotes] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (submitted) return;
-    setConfirmOpen(true);
-  };
-
-  const finalizeSubmission = () => {
-    setSubmitted(true);
-    setConfirmOpen(false);
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-8">
-      <div className="w-full max-w-xl rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-panel)] shadow-2xl">
-        <div className="flex items-center justify-between border-b border-[color:var(--surface-border)] px-6 py-4">
-          <div>
-            <p className="text-xs font-semibold text-[color:var(--surface-text-muted)]">
-              {schedule.subject} 재시험
-            </p>
-            <h3 className="text-xl font-bold text-[color:var(--surface-text)]">
-              {schedule.title}
-            </h3>
-          </div>
-          <button
-            type="button"
-            className="rounded-full p-2 text-[color:var(--surface-text-muted)] transition hover:bg-[color:var(--surface-border)]/30"
-            aria-label="재시험 일정 모달 닫기"
-            onClick={onClose}
-          >
-            <span className={iconClass("text-lg")}>close</span>
-          </button>
-        </div>
-        <form className="space-y-5 px-6 py-6" onSubmit={handleSubmit}>
-          <div className="grid gap-3 text-sm text-[color:var(--surface-text)] sm:grid-cols-2">
-            <DetailRow icon="event" label={schedule.date} />
-            <DetailRow icon="schedule" label={schedule.time} />
-            <DetailRow icon="meeting_room" label={schedule.location} />
-            <DetailRow icon="person" label={schedule.teacher} />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-[color:var(--surface-text)]">
-              희망 일정 (날짜 / 시간)
-            </label>
-            <input
-              type="text"
-              className="w-full rounded-lg border border-[color:var(--surface-border)] bg-[var(--surface-background)] px-4 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-              placeholder="예: 3월 22일 오후 7시"
-              value={preferredSchedule}
-              onChange={(event) => setPreferredSchedule(event.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-[color:var(--surface-text)]">
-              요청 사항
-            </label>
-            <textarea
-              className="h-24 w-full rounded-lg border border-[color:var(--surface-border)] bg-[var(--surface-background)] px-4 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-              placeholder="재시험 신청 사유나 요청 사항을 간단히 작성해주세요."
-              value={notes}
-              onChange={(event) => setNotes(event.target.value)}
-            />
-          </div>
-          {submitted ? (
-            <p className="rounded-lg bg-green-50 px-4 py-3 text-sm font-semibold text-green-700 dark:bg-green-900/20 dark:text-green-300">
-              재시험 신청이 접수되었습니다. 담당 선생님이 확인 후 연락 드릴
-              예정입니다.
-            </p>
-          ) : null}
-          <div className="flex flex-col gap-3 border-t border-[color:var(--surface-border)] pt-4 sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              className="rounded-lg border border-[color:var(--surface-border)] px-4 py-2 text-sm font-semibold text-[color:var(--surface-text)] transition hover:bg-[color:var(--surface-border)]/30"
-              onClick={onClose}
-            >
-              닫기
-            </button>
-            <button
-              type="submit"
-              className="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-600 disabled:opacity-50"
-              disabled={submitted}
-            >
-              {submitted ? "신청 완료" : "재시험 신청"}
-            </button>
-          </div>
-        </form>
-        {confirmOpen ? (
-          <div className="fixed inset-0 z-10 flex items-center justify-center bg-black/40 px-4">
-            <div className="w-full max-w-md rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-panel)] p-6 shadow-xl">
-              <p className="text-sm font-semibold text-[color:var(--surface-text)]">
-                신청을 클릭하면 신청반려시 요청을 재요청할 수 있습니다.
-              </p>
-              <p className="mt-2 text-xs text-[color:var(--surface-text-muted)]">
-                위 내용을 확인하셨다면 확인을 눌러 재시험 신청을 완료해주세요.
-              </p>
-              <div className="mt-4 flex justify-end gap-2">
-                <button
-                  type="button"
-                  className="rounded-lg border border-[color:var(--surface-border)] px-4 py-1.5 text-sm font-semibold text-[color:var(--surface-text)] transition hover:bg-[color:var(--surface-border)]/30"
-                  onClick={() => setConfirmOpen(false)}
-                >
-                  취소
-                </button>
-                <button
-                  type="button"
-                  className="rounded-lg bg-primary px-4 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-600"
-                  onClick={finalizeSubmission}
-                >
-                  확인
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : null}
       </div>
     </div>
   );
@@ -1388,7 +1059,7 @@ function formatWeekRange(weekStart: Date) {
 }
 
 function weekdayLabel(date: Date) {
-  const labels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const labels = ["일", "월", "화", "수", "목", "금", "토"];
   return labels[date.getDay()] ?? "";
 }
 

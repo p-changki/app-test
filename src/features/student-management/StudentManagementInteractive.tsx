@@ -221,13 +221,6 @@ function ClassSelectorPanel({
             <span className={cn(iconClass("text-primary"))}>school</span>
             {classSection.title}
           </h3>
-          <button
-            type="button"
-            className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 shadow-sm transition hover:border-primary hover:text-primary dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
-          >
-            <span className={iconClass("text-[18px]")}>settings</span>
-            {classSection.actionLabel}
-          </button>
         </div>
         <div className="custom-scrollbar -mx-2 flex items-center gap-2 overflow-x-auto px-2 pb-2">
           {classChips.map((chip) => {

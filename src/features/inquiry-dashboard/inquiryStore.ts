@@ -1,7 +1,6 @@
 import { useSyncExternalStore } from "react";
 
 export type InquiryStatus =
-  | "조교 이관"
   | "강사 검토"
   | "답변 완료"
   | "학생/학부모 확인 완료"
@@ -607,7 +606,7 @@ export function createInquiry(input: {
     student: { ...base.student },
     parent: base.parent ? { ...base.parent } : undefined,
     instructor: { ...base.instructor },
-    status: "조교 이관",
+    status: "강사 검토",
   });
 }
 
@@ -637,7 +636,7 @@ export function createInquiryForStudent(input: {
     category: input.category,
     status:
       input.status ??
-      (role === "student" || role === "parent" ? "조교 이관" : "답변 완료"),
+      (role === "student" || role === "parent" ? "강사 검토" : "답변 완료"),
     createdAt,
     updatedAt: createdAt,
     student: { ...input.student },

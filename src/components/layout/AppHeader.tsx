@@ -2,11 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { NavigationLinks } from "@/components/layout/NavigationLinks";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { iconClass } from "@/lib/icon-class";
+import type { InstructorSettings } from "@/lib/instructor-settings";
+import {
+  loadInstructorSettings,
+  onInstructorSettingsChange,
+  saveInstructorSettings,
+} from "@/lib/instructor-settings";
 import { cn } from "@/lib/utils";
 
 const TOP_NAV_LINKS = [
@@ -18,7 +24,7 @@ const INSTRUCTOR_SUB_LINKS = [
   { label: "학생 관리", href: "/student-management" },
   { label: "수업 관리", href: "/class-management" },
   { label: "스케줄 관리", href: "/schedule-management" },
-  { label: "문의 관리", href: "/inquiry-dashboard" },
+  { label: "소통", href: "/inquiry-dashboard" },
   { label: "조교 센터", href: "/assistant-management" },
   { label: "시험 관리", href: "/exam-dashboard" },
   { label: "학습 자료실", href: "/learning-resources" },
@@ -27,22 +33,34 @@ const INSTRUCTOR_SUB_LINKS = [
 const STUDENT_SUB_LINKS = [
   { label: "대시보드", href: "/student-dashboard" },
   { label: "프로필", href: "/student-profile" },
-  { label: "출결", href: "/student-attendance" },
-  { label: "나의 수업", href: "/student-classes" },
-  { label: "문의 관리", href: "/student-inquiries" },
+  { label: "수업 스케줄", href: "/student-classes" },
+  { label: "소통", href: "/student-inquiries" },
   { label: "성적 조회", href: "/student-grades" },
 ];
 
 export function AppHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settings, setSettings] = useState<InstructorSettings>(() =>
+    loadInstructorSettings()
+  );
   const pathname = usePathname();
   const isStudentSection =
     pathname?.startsWith("/student-dashboard") ||
     pathname?.startsWith("/student-profile") ||
-    pathname?.startsWith("/student-attendance") ||
     pathname?.startsWith("/student-classes") ||
     pathname?.startsWith("/student-grades") ||
     pathname?.startsWith("/student-inquiries");
+
+  useEffect(() => onInstructorSettingsChange(setSettings), []);
+
+  const handleToggle = (key: keyof InstructorSettings) => {
+    setSettings((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      saveInstructorSettings(next);
+      return next;
+    });
+  };
 
   return (
     <header
@@ -67,6 +85,28 @@ export function AppHeader() {
             className="hidden flex-1 justify-center md:flex"
           />
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="rounded-lg border border-transparent p-2 text-[color:var(--surface-text)] transition hover:border-[color:var(--surface-border)] hover:bg-[color:var(--surface-background)]"
+              aria-label="알림"
+            >
+              <span className={iconClass("text-[20px]")}>notifications</span>
+            </button>
+            <button
+              type="button"
+              className="rounded-lg border border-transparent p-2 text-[color:var(--surface-text)] transition hover:border-[color:var(--surface-border)] hover:bg-[color:var(--surface-background)]"
+              aria-label="설정"
+              onClick={() => setSettingsOpen(true)}
+            >
+              <span className={iconClass("text-[20px]")}>settings</span>
+            </button>
+            <Link
+              href="/instructor-profile"
+              className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-[color:var(--surface-border)] bg-slate-100 text-sm font-semibold text-slate-600 transition hover:border-primary/50 hover:text-primary dark:bg-slate-800 dark:text-slate-200"
+              aria-label="강사 프로필로 이동"
+            >
+              HK
+            </Link>
             <ThemeToggle />
             <button
               type="button"
@@ -201,6 +241,107 @@ export function AppHeader() {
           </div>
         </div>
       ) : null}
+      {settingsOpen ? (
+        <SettingsModal
+          settings={settings}
+          onToggle={handleToggle}
+          onClose={() => setSettingsOpen(false)}
+        />
+      ) : null}
     </header>
+  );
+}
+
+function SettingsModal({
+  settings,
+  onToggle,
+  onClose,
+}: {
+  settings: InstructorSettings;
+  onToggle: (key: keyof InstructorSettings) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6">
+      <div className="w-full max-w-md overflow-hidden rounded-2xl border border-[color:var(--surface-border)] bg-white shadow-2xl dark:bg-slate-900">
+        <div className="flex items-center justify-between border-b border-[color:var(--surface-border)] px-6 py-4">
+          <div>
+            <p className="text-xs font-semibold text-[color:var(--surface-text-muted)]">
+              강사 설정
+            </p>
+            <h3 className="text-lg font-bold text-[color:var(--surface-text)]">
+              설정 및 보안
+            </h3>
+          </div>
+          <button
+            type="button"
+            className="rounded-full p-2 text-[color:var(--surface-text-muted)] transition hover:bg-[color:var(--surface-border)]/30"
+            onClick={onClose}
+            aria-label="설정 모달 닫기"
+          >
+            <span className={iconClass("text-lg")}>close</span>
+          </button>
+        </div>
+        <div className="space-y-3 px-6 py-5">
+          <SettingRow label="비밀번호 관리" actionLabel="변경" />
+          <SettingRow
+            label="푸시 알림 수신"
+            toggleOn={settings.pushEnabled}
+            onToggle={() => onToggle("pushEnabled")}
+          />
+          <SettingRow
+            label="이메일 알림 수신"
+            toggleOn={settings.emailEnabled}
+            onToggle={() => onToggle("emailEnabled")}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SettingRow({
+  label,
+  actionLabel,
+  toggleOn,
+  onToggle,
+}: {
+  label: string;
+  actionLabel?: string;
+  toggleOn?: boolean;
+  onToggle?: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-background)] px-4 py-3">
+      <span className="text-sm font-semibold text-[color:var(--surface-text)]">
+        {label}
+      </span>
+      {actionLabel ? (
+        <button
+          type="button"
+          className="rounded-lg border border-[color:var(--surface-border)] bg-white px-3 py-1 text-xs font-semibold text-[color:var(--surface-text-muted)]"
+        >
+          {actionLabel}
+        </button>
+      ) : (
+        <button
+          type="button"
+          className={cn(
+            "relative inline-flex h-5 w-9 items-center rounded-full transition",
+            toggleOn ? "bg-primary" : "bg-slate-200 dark:bg-slate-700"
+          )}
+          onClick={onToggle}
+          aria-pressed={toggleOn}
+          aria-label={`${label} ${toggleOn ? "켜짐" : "꺼짐"}`}
+        >
+          <span
+            className={cn(
+              "inline-block h-4 w-4 rounded-full bg-white shadow transition",
+              toggleOn ? "translate-x-4" : "translate-x-1"
+            )}
+          />
+        </button>
+      )}
+    </div>
   );
 }

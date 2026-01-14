@@ -9,6 +9,7 @@ export type StudentEntity = {
   name: string;
   studentId: string;
   classId: string;
+  registeredAt?: string;
   gradeLabel?: string;
   school?: string;
   phone?: string;
@@ -64,6 +65,7 @@ export type AssistantEntity = {
   name: string;
   subject: string;
   phone: string;
+  email?: string;
   className: string;
   recentTask?: string;
   rating?: number;
@@ -71,12 +73,14 @@ export type AssistantEntity = {
   avatarUrl?: string;
 };
 
-export type ExamStatus = "채점 중" | "등록 완료" | "초안";
+export type ExamStatus = "채점 중" | "등록 완료" | "초안" | "채점 완료";
 
 export type ExamQuestion = {
   id: number;
   label: string;
   type: "객관식" | "주관식" | "O/X";
+  category?: string;
+  source?: string;
   points: number;
   answer: string;
 };
@@ -85,6 +89,8 @@ export type ExamDefinition = {
   id: string;
   title: string;
   subject: string;
+  examType: string;
+  source: string;
   classId: string;
   targetClass: string;
   examDate: string;

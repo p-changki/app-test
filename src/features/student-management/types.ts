@@ -35,11 +35,13 @@ export type StudentRecord = {
   name: string;
   studentId: string;
   classId?: string;
+  registeredAt?: string;
   avatarUrl?: string;
   initials?: string;
   className: string;
   classColor: "indigo" | "emerald" | "neutral" | "dashed";
   school: string;
+  grade?: string;
   contact: string;
   attendance?: number;
   attendanceVariant?: "good" | "warning" | "danger";

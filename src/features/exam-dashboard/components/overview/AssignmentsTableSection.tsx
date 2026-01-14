@@ -1,7 +1,13 @@
+"use client";
+
+import Link from "next/link";
+import { useMemo, useState } from "react";
+
 import type { AssignmentRow } from "@/types/exams";
 import { iconClass } from "@/lib/icon-class";
 import { cn } from "@/lib/utils";
-import { SubmissionProgress } from "@/features/exam-dashboard/components/overview/SubmissionProgress";
+import { removeExams } from "@/features/exam-data/examStore";
+import { useExamResultStore } from "@/features/exam-grade-entry/examResultStore";
 
 type AssignmentsTableSectionProps = {
   filters: string[];
@@ -12,6 +18,31 @@ export function AssignmentsTableSection({
   filters,
   rows,
 }: AssignmentsTableSectionProps) {
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const clearExam = useExamResultStore((state) => state.clearExam);
+
+  const selectableRows = useMemo(() => rows.map((row) => row.id), [rows]);
+  const allSelected =
+    selectedIds.length > 0 && selectedIds.length === selectableRows.length;
+  const anySelected = selectedIds.length > 0;
+
+  const toggleAll = (checked: boolean) => {
+    setSelectedIds(checked ? selectableRows : []);
+  };
+
+  const toggleOne = (id: string, checked: boolean) => {
+    setSelectedIds((prev) =>
+      checked ? [...prev, id] : prev.filter((value) => value !== id)
+    );
+  };
+
+  const handleDelete = () => {
+    if (!anySelected) return;
+    removeExams(selectedIds);
+    selectedIds.forEach((id) => clearExam(id));
+    setSelectedIds([]);
+  };
+
   return (
     <section className="flex flex-col gap-4">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -55,6 +86,20 @@ export function AssignmentsTableSection({
             <span className={iconClass("text-lg")}>filter_list</span>
             필터
           </button>
+          <button
+            type="button"
+            disabled={!anySelected}
+            onClick={handleDelete}
+            className={cn(
+              "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold shadow-sm transition",
+              anySelected
+                ? "bg-rose-500 text-white hover:bg-rose-600"
+                : "cursor-not-allowed bg-slate-100 text-slate-400"
+            )}
+          >
+            <span className={iconClass("text-lg")}>delete</span>
+            선택 삭제
+          </button>
         </div>
       </div>
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-[var(--surface-background)] shadow-sm dark:border-slate-700 dark:bg-[var(--surface-background)]">
@@ -63,16 +108,22 @@ export function AssignmentsTableSection({
             <thead className="bg-slate-50 dark:bg-slate-800">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  <input
+                    type="checkbox"
+                    className="rounded border-slate-300 text-primary focus:ring-primary dark:border-slate-600 dark:bg-slate-800"
+                    checked={allSelected}
+                    onChange={(event) => toggleAll(event.target.checked)}
+                    aria-label="모두 선택"
+                  />
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   과제명
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   반
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  마감일
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  제출률
+                  등록일
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   상태
@@ -86,8 +137,19 @@ export function AssignmentsTableSection({
               {rows.map((row) => (
                 <tr
                   key={row.id}
-                  className="cursor-pointer transition hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                  className="transition hover:bg-slate-50 dark:hover:bg-slate-800/50"
                 >
+                  <td className="px-6 py-4">
+                    <input
+                      type="checkbox"
+                      className="rounded border-slate-300 text-primary focus:ring-primary dark:border-slate-600 dark:bg-slate-800"
+                      checked={selectedIds.includes(row.id)}
+                      onChange={(event) =>
+                        toggleOne(row.id, event.target.checked)
+                      }
+                      aria-label={`${row.title} 선택`}
+                    />
+                  </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center">
                       <div
@@ -117,12 +179,6 @@ export function AssignmentsTableSection({
                     {row.dueDate}
                   </td>
                   <td className="px-6 py-4">
-                    <SubmissionProgress
-                      submitted={row.submitted}
-                      progress={row.progress}
-                    />
-                  </td>
-                  <td className="px-6 py-4">
                     <span
                       className={cn(
                         "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
@@ -134,17 +190,31 @@ export function AssignmentsTableSection({
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right text-sm font-medium">
-                    <button
-                      type="button"
-                      className={cn(
-                        "mr-3 text-sm font-semibold",
-                        row.primaryAction.variant === "primary"
-                          ? "text-primary hover:text-[#1a6bbd]"
-                          : "text-slate-600 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-                      )}
-                    >
-                      {row.primaryAction.label}
-                    </button>
+                    {row.primaryAction.href ? (
+                      <Link
+                        href={row.primaryAction.href}
+                        className={cn(
+                          "mr-3 text-sm font-semibold",
+                          row.primaryAction.variant === "primary"
+                            ? "text-primary hover:text-[#1a6bbd]"
+                            : "text-slate-600 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                        )}
+                      >
+                        {row.primaryAction.label}
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        className={cn(
+                          "mr-3 text-sm font-semibold",
+                          row.primaryAction.variant === "primary"
+                            ? "text-primary hover:text-[#1a6bbd]"
+                            : "text-slate-600 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                        )}
+                      >
+                        {row.primaryAction.label}
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="rounded p-1 text-slate-400 transition hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200"
@@ -154,6 +224,16 @@ export function AssignmentsTableSection({
                   </td>
                 </tr>
               ))}
+              {rows.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="px-6 py-8 text-center text-sm text-slate-500 dark:text-slate-400"
+                  >
+                    등록된 시험이 없습니다.
+                  </td>
+                </tr>
+              ) : null}
             </tbody>
           </table>
         </div>

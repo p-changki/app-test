@@ -1,8 +1,14 @@
 export type CalendarEventVariant = "class" | "assignment" | "exam" | "counsel";
 
 export type CalendarEvent = {
+  id: string;
   label: string;
   variant: CalendarEventVariant;
+  title?: string;
+  date?: string;
+  time?: string;
+  location?: string;
+  content?: string;
 };
 
 export type CalendarDay = {
@@ -11,12 +17,6 @@ export type CalendarDay = {
   weekday: number;
   events?: CalendarEvent[];
   isToday?: boolean;
-};
-
-export type MiniCalendarDay = {
-  label: string;
-  state?: "muted" | "saturday" | "sunday" | "today";
-  dot?: "assignment" | "counsel" | "exam";
 };
 
 export type FilterOption = {
