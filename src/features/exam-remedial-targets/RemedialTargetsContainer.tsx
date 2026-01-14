@@ -102,7 +102,7 @@ export function RemedialTargetsContainer() {
         iconClass: "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30",
       },
     ];
-  }, [remedialStudents.length, unscheduledList.length]);
+  }, [remedialStudents.length]);
 
   return (
     <>

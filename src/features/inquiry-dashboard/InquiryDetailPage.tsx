@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
@@ -979,9 +980,12 @@ export function InquiryDetailPage({ inquiryId }: { inquiryId: string }) {
         <div className="space-y-4 px-6 py-4">
           {activeAttachment?.url ? (
             <>
-              <img
+              <Image
                 src={activeAttachment.url}
                 alt={activeAttachment.label}
+                width={1200}
+                height={800}
+                unoptimized
                 className="h-auto w-full rounded-xl border border-[#dbe0e6] object-cover dark:border-gray-700"
               />
               <a

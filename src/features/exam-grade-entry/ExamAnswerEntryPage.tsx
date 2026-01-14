@@ -31,7 +31,7 @@ export function ExamAnswerEntryPage({ examId }: { examId: string }) {
     () => getExamResults(results, examId),
     [results, examId]
   );
-  const examQuestions = exam?.questions ?? [];
+  const examQuestions = useMemo(() => exam?.questions ?? [], [exam]);
   const examTotalQuestions = exam?.totalQuestions ?? 0;
   const examPassScore = exam?.passScore ?? 0;
   const examTypeLabel = exam?.examType || "시험";

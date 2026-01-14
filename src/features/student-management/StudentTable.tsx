@@ -132,6 +132,7 @@ export function StudentTable({
     studentId: string;
     studentName: string;
   } | null>(null);
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: students,
     columns,
