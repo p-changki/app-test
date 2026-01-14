@@ -169,17 +169,8 @@ export function ExamAnswerEntryPage({ examId }: { examId: string }) {
   const allLocked =
     students.length > 0 &&
     students.every((student) => examResults[student.id]?.locked);
-  const canPreview = resultEntries.length > 0;
-
   const handleFinalize = () => {
     if (!exam || !allLocked) return;
-    setReportVisibleCount(10);
-    setReportStudentVisibleCount(5);
-    setReportOpen(true);
-  };
-
-  const handlePreview = () => {
-    if (!canPreview) return;
     setReportVisibleCount(10);
     setReportStudentVisibleCount(5);
     setReportOpen(true);
@@ -393,20 +384,6 @@ export function ExamAnswerEntryPage({ examId }: { examId: string }) {
               ) : null}
             </div>
             <div className="mt-4">
-              <button
-                type="button"
-                disabled={!canPreview}
-                onClick={handlePreview}
-                className={cn(
-                  "mb-2 flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition",
-                  canPreview
-                    ? "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                    : "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
-                )}
-              >
-                미리보기
-                <span className={iconClass("text-base")}>visibility</span>
-              </button>
               <button
                 type="button"
                 disabled={!allLocked}
@@ -624,7 +601,7 @@ export function ExamAnswerEntryPage({ examId }: { examId: string }) {
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setReportOpen(false)}
           />
-          <div className="relative z-10 w-full max-w-5xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+          <div className="relative z-10 flex w-full max-w-4xl max-h-[85vh] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
             <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-700">
               <div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">
@@ -642,7 +619,7 @@ export function ExamAnswerEntryPage({ examId }: { examId: string }) {
                 <span className={iconClass("text-base")}>close</span>
               </button>
             </div>
-            <div className="space-y-6 px-6 py-5 text-sm text-slate-600 dark:text-slate-300">
+            <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-5 text-sm text-slate-600 dark:text-slate-300">
               <section className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50">
                 <div className="grid gap-4 md:grid-cols-4">
                   <div>
