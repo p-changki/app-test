@@ -12,15 +12,6 @@ import type {
   TodayClassSession,
 } from "@/features/dashboard/types";
 
-const definedScores = studentEntities
-  .map((student) => student.averageScore)
-  .filter((score): score is number => typeof score === "number");
-
-const averageScore = definedScores.length
-  ? definedScores.reduce((sum, score) => sum + score, 0) / definedScores.length
-  : 0;
-const averageScoreLabel = `${averageScore.toFixed(1)}점`;
-
 const totalStudents = studentEntities.length;
 const pausedStudents = studentEntities.filter(
   (student) => student.status && student.status !== "재원중"
@@ -55,13 +46,6 @@ export const dashboardSummaryCards: DashboardSummaryCard[] = [
     icon: "description",
     iconClassName:
       "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-200",
-  },
-  {
-    title: "평균 점수",
-    value: averageScoreLabel,
-    icon: "leaderboard",
-    iconClassName:
-      "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-200",
   },
 ];
 
